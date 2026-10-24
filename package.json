@@ -1,0 +1,183 @@
+{
+	"name": "project-dashboard-auto-expander",
+	"displayName": "Dino Dashboard (Deutsch)",
+	"description": "Projekt-Manager & Dashboard auf Deutsch: Favoriten mit Stern markieren, Ordner hinzufügen, Projektnamen & automatische Beschreibungen verwalten und Projekte direkt mit 1 Klick in Antigravity laden.",
+	"version": "1.4.0",
+	"publisher": "x4rinia",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/X4rinia/dino-dashboard.git"
+	},
+	"license": "MIT",
+	"engines": {
+		"vscode": "^1.80.0"
+	},
+	"categories": [
+		"Visualization",
+		"Other"
+	],
+	"keywords": [
+		"dino",
+		"dashboard",
+		"workspace",
+		"projekt",
+		"antigravity",
+		"deutsch"
+	],
+	"activationEvents": [
+		"*",
+		"onStartupFinished",
+		"onView:projectOverview.explorerView",
+		"onView:projectOverview.sidebarView"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "project-overview-container",
+					"title": "Dino Dashboard",
+					"icon": "resources/icon.svg"
+				}
+			]
+		},
+		"views": {
+			"explorer": [
+				{
+					"type": "webview",
+					"id": "projectOverview.explorerView",
+					"name": "Dino Dashboard",
+					"icon": "resources/icon.svg",
+					"contextualTitle": "Dino Dashboard"
+				}
+			],
+			"project-overview-container": [
+				{
+					"type": "webview",
+					"id": "projectOverview.sidebarView",
+					"name": "Dino Dashboard",
+					"icon": "resources/icon.svg"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "projectOverview.showDashboard",
+				"title": "Dino Dashboard: Dashboard anzeigen",
+				"icon": "$(dashboard)"
+			},
+			{
+				"command": "projectOverview.addFolder",
+				"title": "Dino Dashboard: Projekt-Ordner hinzufügen / öffnen",
+				"icon": "$(folder-opened)"
+			},
+			{
+				"command": "projectOverview.scanParentFolder",
+				"title": "Dino Dashboard: Überordner nach Projekten scannen",
+				"icon": "$(search)"
+			},
+			{
+				"command": "projectOverview.refresh",
+				"title": "Dino Dashboard: Projekte aktualisieren",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "projectOverview.autoExpand",
+				"title": "Dino Dashboard: Projektordner im Explorer ausklappen",
+				"icon": "$(unfold)"
+			},
+			{
+				"command": "projectOverview.openSettings",
+				"title": "Dino Dashboard: Einstellungen öffnen",
+				"icon": "$(gear)"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "projectOverview.addFolder",
+					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
+					"group": "navigation@1"
+				},
+				{
+					"command": "projectOverview.refresh",
+					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
+					"group": "navigation@2"
+				},
+				{
+					"command": "projectOverview.autoExpand",
+					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
+					"group": "navigation@3"
+				},
+				{
+					"command": "projectOverview.openSettings",
+					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
+					"group": "navigation@4"
+				}
+			]
+		},
+		"configuration": {
+			"title": "Dino Dashboard & Auto-Expander",
+			"properties": {
+				"projectSummary.autoExpandExplorer": {
+					"type": "boolean",
+					"default": true,
+					"description": "Wichtige Projektverzeichnisse beim Öffnen automatisch im Datei-Explorer ausklappen."
+				},
+				"projectSummary.autoFocusAntigravity": {
+					"type": "boolean",
+					"default": true,
+					"description": "Beim Laden eines Projekts über das Dino Dashboard automatisch Antigravity aktivieren."
+				},
+				"projectSummary.ignoredFolders": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [
+						"node_modules",
+						".git",
+						"dist",
+						"build",
+						".venv",
+						"venv",
+						"target",
+						"vendor",
+						".next",
+						".nuxt",
+						"coverage",
+						".cache",
+						"__pycache__"
+					],
+					"description": "Ordnernamen, die bei der Analyse und beim automatischen Ausklappen ignoriert werden."
+				},
+				"projectSummary.showMascot": {
+					"type": "boolean",
+					"default": true,
+					"description": "Dino-Maskottchen (Projekt-Wächter 🦖) in der Kopfzeile anzeigen."
+				},
+				"projectSummary.mascotTitle": {
+					"type": "string",
+					"default": "Dino-Wächter",
+					"description": "Anzeigename des Dino-Maskottchens im Dashboard."
+				},
+				"projectSummary.maxAutoExpandDepth": {
+					"type": "number",
+					"default": 1,
+					"description": "Tiefe der Ordner, die automatisch im Explorer ausgeklappt werden sollen."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm.cmd run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@types/node": "^20.14.0",
+		"@types/vscode": "^1.80.0",
+		"typescript": "^5.4.5"
+	}
+}
+
