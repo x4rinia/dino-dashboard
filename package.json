@@ -1,5 +1,5 @@
 {
-	"name": "project-dashboard-auto-expander",
+	"name": "dino-dashboard",
 	"displayName": "Dino Dashboard (Deutsch)",
 	"description": "Projekt-Manager & Dashboard auf Deutsch: Favoriten mit Stern markieren, Ordner hinzufügen, Projektnamen & automatische Beschreibungen verwalten und Projekte direkt mit 1 Klick in Antigravity laden.",
 	"version": "1.4.1",
@@ -26,7 +26,6 @@
 		"deutsch"
 	],
 	"activationEvents": [
-		"*",
 		"onStartupFinished",
 		"onView:projectOverview.explorerView",
 		"onView:projectOverview.sidebarView"
