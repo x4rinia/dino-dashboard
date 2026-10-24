@@ -649,6 +649,83 @@ class SidebarProvider {
       white-space: nowrap;
     }
 
+    .tbl-chevron {
+      font-size: 9.5px;
+      color: var(--text-muted);
+      transition: transform 0.15s ease;
+      display: inline-block;
+      width: 12px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .note-pill {
+      font-size: 10px;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      background: rgba(234, 179, 8, 0.16);
+      color: #e3b341;
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .note-pill:hover {
+      background: rgba(234, 179, 8, 0.28);
+      border-color: rgba(234, 179, 8, 0.65);
+    }
+
+    .tbl-btn-note-add {
+      font-size: 9.5px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      border: 1px dashed var(--card-border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      opacity: 0.75;
+      transition: all 0.15s ease;
+    }
+    .tbl-btn-note-add:hover {
+      opacity: 1;
+      border-color: #e3b341;
+      color: #e3b341;
+    }
+
+    .note-inline-edit {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 4px 0;
+      width: 100%;
+    }
+
+    .quick-chip {
+      font-size: 9.5px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: rgba(128, 128, 128, 0.1);
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .quick-chip:hover {
+      background: rgba(128, 128, 128, 0.25);
+      color: var(--vscode-foreground);
+      border-color: var(--vscode-focusBorder, var(--accent));
+    }
+
     .cell-quick-actions {
       display: flex;
       align-items: center;
@@ -1338,20 +1415,26 @@ class SidebarProvider {
         return;
       }
 
-      // 1. STANDARD: KOMPAKTE TABELLEN-ANSICHT (nur Name & Schnell-Aktionen, mit 1 Klick direkt öffnen)
+      // 1. STANDARD: KOMPAKTE TABELLEN-ANSICHT (Name & Schnell-Aktionen, Klick klappt Details aus)
       if (state.viewMode === 'table') {
         container.innerHTML = \`
           <div class="projects-table-wrap">
             \${filtered.map(proj => {
               const isExpanded = state.expandedDetailsFor === proj.id;
               const isEditingName = state.editingNameFor === proj.id;
+              const isEditingNotes = state.editingNotesFor === proj.id;
               const folderDiffHint = (proj.customName && proj.customName !== proj.folderName)
                 ? \` (Ordner: \${escapeHtml(proj.folderName)})\`
                 : '';
 
               return \`
                 <div class="table-row-item \${proj.isActiveWorkspace ? 'active-item' : ''} \${proj.isFavorite ? 'favorite-item' : ''}" data-id="\${escapeHtml(proj.id)}">
-                  <div class="table-main-row" onclick="openInAntigravity('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')">
+                  <div class="table-main-row" onclick="toggleRowDetails('\${escapeHtml(proj.id)}')">
+                    <!-- Ausklapp-Pfeil -->
+                    <span class="tbl-chevron" title="\${isExpanded ? 'Details einklappen' : 'Details ausklappen'}">
+                      \${isExpanded ? '▼' : '▶'}
+                    </span>
+
                     <!-- Stern Favorit -->
                     <button class="cell-fav-btn \${proj.isFavorite ? 'is-fav' : ''}" onclick="event.stopPropagation(); toggleFavorite('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="\${proj.isFavorite ? 'Aus Favoriten entfernen' : 'Als Favorit mit Stern markieren'}">
                       \${proj.isFavorite ? '⭐' : '☆'}
@@ -1362,7 +1445,7 @@ class SidebarProvider {
                       \${proj.isActiveWorkspace ? '🦖' : '📦'}
                     </div>
 
-                    <!-- Name & Pfad -->
+                    <!-- Name & Pfad & Notizen -->
                     <div class="cell-content">
                       \${isEditingName ? \`
                         <div style="display: flex; gap: 4px; align-items: center;" onclick="event.stopPropagation();">
@@ -1373,29 +1456,59 @@ class SidebarProvider {
                         </div>
                       \` : \`
                         <div class="cell-title-line">
-                          <span class="cell-title-text" title="Klicken, um „\${escapeHtml(proj.name)}“ sofort in Antigravity zu laden">\${escapeHtml(proj.name)}</span>
+                          <span class="cell-title-text" title="Klicken, um Details auszuklappen / einzuklappen">\${escapeHtml(proj.name)}</span>
                           <button class="icon-btn" onclick="event.stopPropagation(); toggleEditName('\${escapeHtml(proj.id)}')" title="Name umbenennen">✏️</button>
                           \${proj.isFavorite ? '<span class="mini-pill fav-pill">⭐</span>' : ''}
                           \${proj.isActiveWorkspace ? '<span class="mini-pill active-pill">🟢 Aktiv</span>' : ''}
+
+                          <!-- Direkt sichtbare Projekt-Notiz in der Zeile -->
+                          \${proj.customNotes ? \`
+                            <span class="note-pill" title="Notiz: „\${escapeHtml(proj.customNotes)}“ (Klicken zum Bearbeiten)" onclick="event.stopPropagation(); toggleEditNotes('\${escapeHtml(proj.id)}')">
+                              📌 \${escapeHtml(proj.customNotes)}
+                            </span>
+                          \` : \`
+                            <button class="tbl-btn-note-add" onclick="event.stopPropagation(); toggleEditNotes('\${escapeHtml(proj.id)}')" title="Notiz hinzufügen (z. B. 'ist in arbeit', 'button noch verbuggt')">
+                              + Notiz
+                            </button>
+                          \`}
                         </div>
-                        <div class="cell-sub-line" title="\${escapeHtml(proj.folderPath)}">
-                          \${escapeHtml(proj.folderPath)}\${folderDiffHint}
-                        </div>
+
+                        \${isEditingNotes ? \`
+                          <div class="note-inline-edit" onclick="event.stopPropagation();">
+                            <div style="display: flex; gap: 4px; align-items: center;">
+                              <input type="text" class="inline-input" id="quickNoteInput_\${escapeHtml(proj.id)}" value="\${escapeHtml(proj.customNotes || '')}" placeholder="Notiz eingeben (z. B. 'ist in arbeit', 'button noch verbuggt')..." onkeydown="handleNoteKey(event, '\${escapeHtml(proj.id)}')">
+                              <button class="tbl-btn tbl-btn-launch" onclick="saveQuickNote('\${escapeHtml(proj.id)}')">💾 Speichern</button>
+                              <button class="tbl-btn" onclick="toggleEditNotes('\${escapeHtml(proj.id)}')">✕</button>
+                            </div>
+                            <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-top: 2px;">
+                              <span style="font-size: 9.5px; color: var(--text-muted);">Schnellwahl:</span>
+                              <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(proj.id)}', '⚡ Ist in Arbeit')">⚡ In Arbeit</span>
+                              <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(proj.id)}', '🐛 Button noch verbuggt')">🐛 Bugfix</span>
+                              <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(proj.id)}', '✨ Neues Feature geplant')">✨ Feature</span>
+                              <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(proj.id)}', '⏳ Pausiert')">⏳ Pausiert</span>
+                              <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(proj.id)}', '✅ Fertiggestellt')">✅ Fertig</span>
+                            </div>
+                          </div>
+                        \` : \`
+                          <div class="cell-sub-line" title="\${escapeHtml(proj.folderPath)}">
+                            \${escapeHtml(proj.folderPath)}\${folderDiffHint}
+                          </div>
+                        \`}
                       \`}
                     </div>
 
-                    <!-- Schnell-Aktionen -->
+                    <!-- Schnell-Aktionen (Rechts) -->
                     <div class="cell-quick-actions" onclick="event.stopPropagation();">
                       \${proj.isActiveWorkspace ? \`
-                        <button class="tbl-btn tbl-btn-active" onclick="focusAntigravityPanel()" title="Antigravity-Chat fokussieren">
+                        <button class="tbl-btn tbl-btn-active" onclick="focusAntigravityPanel()" title="Projekt ist aktiv! Zum Antigravity-Chat wechseln">
                           🦖 Aktiv
                         </button>
                       \` : \`
-                        <button class="tbl-btn tbl-btn-launch" onclick="openInAntigravity('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Projekt mit 1 Klick in Antigravity laden">
+                        <button class="tbl-btn tbl-btn-launch" onclick="openInAntigravity('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Projekt in Antigravity laden & weiterarbeiten">
                           🚀 Öffnen
                         </button>
                       \`}
-                      <button class="tbl-btn" onclick="toggleRowDetails('\${escapeHtml(proj.id)}')" title="\${isExpanded ? 'Details verbergen' : 'Details & Beschreibung anzeigen'}">
+                      <button class="tbl-btn" onclick="toggleRowDetails('\${escapeHtml(proj.id)}')" title="\${isExpanded ? 'Details verbergen' : 'Details & Beschreibung ausklappen'}">
                         \${isExpanded ? '▲' : 'ℹ️'}
                       </button>
                       <button class="tbl-btn tbl-btn-delete" onclick="removeProject('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Projekt aus dem Dino Dashboard entfernen">
@@ -1407,6 +1520,17 @@ class SidebarProvider {
                   <!-- Inline Details (wenn ausgeklappt) -->
                   \${isExpanded ? \`
                     <div class="table-inline-details">
+                      <!-- Notiz-Bereich im Detailpanel -->
+                      <div style="background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 4px; padding: 6px 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                          <span style="font-size: 10px; font-weight: 700; color: #e3b341; text-transform: uppercase; letter-spacing: 0.3px;">📌 Projekt-Notiz / Status</span>
+                          <button class="icon-btn" onclick="toggleEditNotes('\${escapeHtml(proj.id)}')">✏️ Bearbeiten</button>
+                        </div>
+                        <div style="font-size: 11.5px; color: var(--vscode-foreground);">
+                          \${proj.customNotes ? escapeHtml(proj.customNotes) : '<span style="color: var(--text-muted); font-style: italic;">Noch keine Notiz eingetragen. Klicke auf „Bearbeiten“ oder „+ Notiz“, um Status wie „ist in arbeit“ oder „button noch verbuggt“ hinzuzufügen.</span>'}
+                        </div>
+                      </div>
+
                       <div style="font-size: 11px; line-height: 1.4; color: var(--vscode-foreground);">
                         <b>Beschreibung:</b> \${escapeHtml(proj.description)}
                       </div>
@@ -1419,13 +1543,11 @@ class SidebarProvider {
                         <span>Branch: \${escapeHtml(proj.stats.gitBranch || 'Kein Git')}</span>
                         <span>\${escapeHtml(proj.stats.lastCommit || '')}</span>
                       </div>
-                      \${proj.customNotes ? \`
-                        <div style="font-size: 11px; padding: 4px 6px; background: rgba(128,128,128,0.06); border-radius: 3px;">
-                          <b>Notizen:</b> \${escapeHtml(proj.customNotes)}
-                        </div>
-                      \` : ''}
                       <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px;">
-                        <button class="tbl-btn" onclick="addToCurrentWorkspace('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')">➕ Dazu laden</button>
+                        \${!proj.isActiveWorkspace ? \`
+                          <button class="tbl-btn tbl-btn-launch" onclick="openInAntigravity('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')">🚀 In Antigravity laden</button>
+                          <button class="tbl-btn" onclick="addToCurrentWorkspace('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')">➕ Dazu laden</button>
+                        \` : ''}
                         <button class="tbl-btn" onclick="revealInExplorer('\${escapeHtml(proj.folderUri)}')">📂 Explorer</button>
                         <button class="tbl-btn" onclick="openFolderNewWindow('\${escapeHtml(proj.folderUri)}')">↗ Neues Fenster</button>
                         \${proj.hasReadme ? \`<button class="tbl-btn" onclick="openReadme('\${escapeHtml(proj.readmeUri || '')}')">📖 README</button>\` : ''}
@@ -1784,6 +1906,40 @@ class SidebarProvider {
     function toggleEditNotes(projId) {
       state.editingNotesFor = state.editingNotesFor === projId ? null : projId;
       render();
+      if (state.editingNotesFor === projId) {
+        setTimeout(() => {
+          const el = document.getElementById(\`quickNoteInput_\${projId}\`) || document.getElementById(\`notesInput_\${projId}\`);
+          if (el) { el.focus(); el.select(); }
+        }, 40);
+      }
+    }
+
+    function handleNoteKey(event, projId) {
+      if (event.key === 'Enter') {
+        saveQuickNote(projId);
+      } else if (event.key === 'Escape') {
+        toggleEditNotes(projId);
+      }
+    }
+
+    function saveQuickNote(projId) {
+      const input = document.getElementById(\`quickNoteInput_\${projId}\`);
+      if (input) {
+        vscode.postMessage({
+          command: 'saveNotes',
+          uri: projId,
+          notes: input.value.trim()
+        });
+        state.editingNotesFor = null;
+      }
+    }
+
+    function setQuickNote(projId, text) {
+      const input = document.getElementById(\`quickNoteInput_\${projId}\`) || document.getElementById(\`notesInput_\${projId}\`);
+      if (input) {
+        input.value = text;
+        input.focus();
+      }
     }
 
     function saveNotes(projId) {
