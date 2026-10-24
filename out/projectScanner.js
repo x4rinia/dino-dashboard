@@ -43,15 +43,53 @@ const child_process_1 = require("child_process");
 class ProjectScanner {
     context;
     globalRegistryPath;
+    removedProjectsPath;
     agyProjectsDir;
     constructor(context) {
         this.context = context;
         const geminiDir = path.join(os.homedir(), '.gemini');
         this.globalRegistryPath = path.join(geminiDir, 'dino-dashboard-projects.json');
+        this.removedProjectsPath = path.join(geminiDir, 'dino-dashboard-removed.json');
         this.agyProjectsDir = path.join(geminiDir, 'config', 'projects');
     }
     normalizePathKey(p) {
         return path.resolve(p).toLowerCase();
+    }
+    getRemovedProjects() {
+        const list = this.context.globalState.get('dinoDashboard.removedProjects') || [];
+        const set = new Set(list.map(p => this.normalizePathKey(p)));
+        if (fs.existsSync(this.removedProjectsPath)) {
+            try {
+                const raw = fs.readFileSync(this.removedProjectsPath, 'utf8');
+                const arr = JSON.parse(raw);
+                if (Array.isArray(arr)) {
+                    for (const p of arr) {
+                        if (p && typeof p === 'string') {
+                            set.add(this.normalizePathKey(p));
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+        return set;
+    }
+    saveRemovedProjects(set) {
+        const arr = Array.from(set);
+        try {
+            this.context.globalState.update('dinoDashboard.removedProjects', arr);
+        }
+        catch { }
+        try {
+            const dir = path.dirname(this.removedProjectsPath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+            fs.writeFileSync(this.removedProjectsPath, JSON.stringify(arr, null, 2), 'utf8');
+        }
+        catch (e) {
+            console.warn('Konnte gelöschte Projekte nicht speichern:', e);
+        }
     }
     /**
      * Lädt alle gespeicherten Projekte aus der globalen Datei + globalState
@@ -59,6 +97,7 @@ class ProjectScanner {
      */
     getSavedRegistry() {
         let registry = {};
+        const removed = this.getRemovedProjects();
         // 1. Aus VS Code globalState laden
         const fromState = this.context.globalState.get('dinoDashboard.projects');
         if (fromState && typeof fromState === 'object') {
@@ -80,7 +119,14 @@ class ProjectScanner {
             }
         }
         let changed = false;
-        // 3. Bestehende Antigravity-Projekte aus ~/.gemini/config/projects/*.json importieren
+        // Gelöschte Projekte konsequent aus der Registry entfernen
+        for (const k of Object.keys(registry)) {
+            if (removed.has(k)) {
+                delete registry[k];
+                changed = true;
+            }
+        }
+        // 3. Bestehende Antigravity-Projekte aus ~/.gemini/config/projects/*.json importieren (nur wenn nicht gelöscht)
         if (fs.existsSync(this.agyProjectsDir)) {
             try {
                 const files = fs.readdirSync(this.agyProjectsDir);
@@ -97,7 +143,7 @@ class ProjectScanner {
                             const fsPath = uri.fsPath;
                             if (fsPath && fs.existsSync(fsPath)) {
                                 const key = this.normalizePathKey(fsPath);
-                                if (!registry[key]) {
+                                if (!removed.has(key) && !registry[key]) {
                                     const folderBase = path.basename(fsPath);
                                     registry[key] = {
                                         folderPath: fsPath,
@@ -115,23 +161,25 @@ class ProjectScanner {
             }
             catch { }
         }
-        // 4. Aktuell geöffnete Workspace-Ordner automatisch aufnehmen
+        // 4. Aktuell geöffnete Workspace-Ordner automatisch aufnehmen (nur wenn nicht gelöscht)
         const openFolders = vscode.workspace.workspaceFolders || [];
         for (const folder of openFolders) {
             const fsPath = folder.uri.fsPath;
             if (fsPath && fs.existsSync(fsPath)) {
                 const key = this.normalizePathKey(fsPath);
-                if (!registry[key]) {
-                    registry[key] = {
-                        folderPath: fsPath,
-                        folderUri: vscode.Uri.file(fsPath).toString(),
-                        addedAt: Date.now(),
-                        lastOpened: Date.now()
-                    };
-                    changed = true;
-                }
-                else {
-                    registry[key].lastOpened = Date.now();
+                if (!removed.has(key)) {
+                    if (!registry[key]) {
+                        registry[key] = {
+                            folderPath: fsPath,
+                            folderUri: vscode.Uri.file(fsPath).toString(),
+                            addedAt: Date.now(),
+                            lastOpened: Date.now()
+                        };
+                        changed = true;
+                    }
+                    else {
+                        registry[key].lastOpened = Date.now();
+                    }
                 }
             }
         }
@@ -165,6 +213,12 @@ class ProjectScanner {
         }
         const resolved = path.resolve(fsPath);
         const key = this.normalizePathKey(resolved);
+        // Falls das Projekt zuvor als gelöscht markiert war, wieder aktivieren
+        const removed = this.getRemovedProjects();
+        if (removed.has(key)) {
+            removed.delete(key);
+            this.saveRemovedProjects(removed);
+        }
         const registry = this.getSavedRegistry();
         const existing = registry[key] || {
             folderPath: resolved,
@@ -182,16 +236,45 @@ class ProjectScanner {
      * Entfernt ein Projekt aus der gespeicherten Dashboard-Liste (löscht KEINE Dateien auf der Festplatte).
      */
     async removeProjectFolder(idOrPath) {
-        const registry = this.getSavedRegistry();
         let targetPath = idOrPath;
         if (idOrPath.startsWith('file://')) {
             targetPath = vscode.Uri.parse(idOrPath).fsPath;
         }
-        const key = this.normalizePathKey(targetPath);
+        const resolved = path.resolve(targetPath);
+        const key = this.normalizePathKey(resolved);
+        // 1. In removedProjects aufnehmen (verhindert automatisches Wiedererscheinen)
+        const removed = this.getRemovedProjects();
+        removed.add(key);
+        this.saveRemovedProjects(removed);
+        // 2. Aus Registry entfernen
+        const registry = this.getSavedRegistry();
         if (registry[key]) {
             delete registry[key];
             this.saveRegistry(registry);
         }
+        // 3. Aus ~/.gemini/config/projects/*.json entfernen
+        try {
+            if (fs.existsSync(this.agyProjectsDir)) {
+                const files = fs.readdirSync(this.agyProjectsDir);
+                for (const file of files) {
+                    if (!file.endsWith('.json'))
+                        continue;
+                    const fullPath = path.join(this.agyProjectsDir, file);
+                    try {
+                        const data = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+                        const resList = data?.projectResources?.resources;
+                        if (Array.isArray(resList) && resList.length > 0 && resList[0].folderUri) {
+                            const existingPath = vscode.Uri.parse(resList[0].folderUri).fsPath;
+                            if (existingPath && this.normalizePathKey(existingPath) === key) {
+                                fs.unlinkSync(fullPath);
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+        }
+        catch { }
     }
     /**
      * Scannt einen Überordner (z. B. H:\) nach direkten Unterordnern und fügt sie als Projekte hinzu.
@@ -300,7 +383,8 @@ class ProjectScanner {
         const registry = this.getSavedRegistry();
         const openFolders = vscode.workspace.workspaceFolders || [];
         const activePaths = new Set(openFolders.map(f => this.normalizePathKey(f.uri.fsPath)));
-        const entries = Object.values(registry).filter(e => e.folderPath && fs.existsSync(e.folderPath));
+        const removed = this.getRemovedProjects();
+        const entries = Object.values(registry).filter(e => e.folderPath && fs.existsSync(e.folderPath) && !removed.has(this.normalizePathKey(e.folderPath)));
         const projects = [];
         for (const entry of entries) {
             try {

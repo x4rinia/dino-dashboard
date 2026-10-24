@@ -115,7 +115,8 @@ class SidebarProvider {
                 case 'removeProject': {
                     if (message.uri) {
                         await this.scanner.removeProjectFolder(message.uri);
-                        vscode.window.showInformationMessage('Projekt aus dem Dino Dashboard entfernt (Dateien bleiben erhalten).');
+                        const label = message.name ? `Projekt „${message.name}“` : 'Projekt';
+                        vscode.window.showInformationMessage(`${label} aus dem Dino Dashboard entfernt.`);
                         await this.updateDashboard();
                     }
                     break;
@@ -503,6 +504,204 @@ class SidebarProvider {
 
     .search-input:focus {
       border-color: var(--vscode-focusBorder, var(--accent));
+    }
+
+    /* Ansicht-Umschalter (Tabelle vs. Karten) */
+    .view-switcher {
+      display: inline-flex;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      overflow: hidden;
+      background: rgba(128, 128, 128, 0.08);
+      flex-shrink: 0;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 7px;
+      font-size: 11px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s ease;
+    }
+
+    .view-btn.active {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      font-weight: 600;
+    }
+
+    /* Tabelle / Kompakte Ansicht */
+    .projects-table-wrap {
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--vscode-editor-background);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-row-item {
+      border-bottom: 1px solid var(--card-border);
+      transition: background 0.12s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .table-row-item:last-child {
+      border-bottom: none;
+    }
+
+    .table-main-row {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      transition: background 0.12s ease;
+    }
+    .table-main-row:hover {
+      background: rgba(128, 128, 128, 0.1);
+    }
+
+    .table-row-item.active-item {
+      background: rgba(46, 160, 67, 0.08);
+      border-left: 3.5px solid var(--active-green-text);
+    }
+    .table-row-item.favorite-item:not(.active-item) {
+      border-left: 3.5px solid #e3b341;
+    }
+
+    .cell-fav-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: transform 0.15s ease;
+      flex-shrink: 0;
+    }
+    .cell-fav-btn:hover {
+      transform: scale(1.3);
+    }
+    .cell-fav-btn.is-fav {
+      color: #e3b341;
+      filter: drop-shadow(0 0 3px rgba(227, 179, 65, 0.6));
+    }
+
+    .cell-icon-wrap {
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .cell-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cell-title-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+
+    .cell-title-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--vscode-foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cell-sub-line {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-pill {
+      font-size: 9.5px;
+      padding: 1px 5px;
+      border-radius: 8px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .cell-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .tbl-btn {
+      background: rgba(128, 128, 128, 0.15);
+      color: var(--vscode-foreground);
+      border: 1px solid var(--card-border);
+      padding: 3px 6px;
+      font-size: 11px;
+      border-radius: 3px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s ease;
+    }
+    .tbl-btn:hover {
+      background: rgba(128, 128, 128, 0.3);
+    }
+    .tbl-btn-launch {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border: none;
+      font-weight: 600;
+      padding: 4px 9px;
+    }
+    .tbl-btn-launch:hover {
+      filter: brightness(1.15);
+    }
+    .tbl-btn-active {
+      background: rgba(46, 160, 67, 0.22);
+      color: #3fb950;
+      border: 1px solid rgba(63, 185, 80, 0.5);
+      font-weight: 600;
+      padding: 4px 8px;
+    }
+    .tbl-btn-delete:hover {
+      background: rgba(248, 81, 73, 0.25);
+      color: #f85149;
+      border-color: rgba(248, 81, 73, 0.4);
+    }
+
+    .table-inline-details {
+      padding: 10px 12px 12px;
+      background: rgba(128, 128, 128, 0.05);
+      border-top: 1px dashed var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     /* Projekt-Karten */
@@ -977,7 +1176,7 @@ class SidebarProvider {
     </div>
   </div>
 
-  <!-- Werkzeugleiste: Ordner öffnen, Überordner scannen, Suchen & Favoriten-Filter -->
+  <!-- Werkzeugleiste: Ordner öffnen, Überordner scannen, Suchen & Favoriten-Filter & Ansichten -->
   <div class="toolbar">
     <div class="toolbar-buttons">
       <button class="btn btn-primary" style="flex: 1; justify-content: center; padding: 6px 8px; font-weight: 600;" onclick="addFolder()" title="Einen oder mehrere Projektordner auswählen und im Dashboard speichern">
@@ -992,6 +1191,10 @@ class SidebarProvider {
       <button class="filter-fav-btn" id="filterFavBtn" onclick="toggleFilterFavorites()" title="Nur mit Stern markierte Favoriten anzeigen">
         ⭐ Favoriten
       </button>
+      <div class="view-switcher">
+        <button class="view-btn" id="viewBtnTable" onclick="setViewMode('table')" title="Kompakte Tabellenansicht (Standard)">☰ Tabelle</button>
+        <button class="view-btn" id="viewBtnCards" onclick="setViewMode('cards')" title="Detaillierte Kartenansicht">☲ Karten</button>
+      </div>
     </div>
   </div>
 
@@ -1015,6 +1218,8 @@ class SidebarProvider {
       workspaceName: 'Workspace',
       searchQuery: '',
       filterFavorites: false,
+      viewMode: 'table',
+      expandedDetailsFor: null,
       editingNameFor: null,
       editingDescFor: null,
       editingNotesFor: null,
@@ -1080,6 +1285,18 @@ class SidebarProvider {
         }
       }
 
+      const btnTable = document.getElementById('viewBtnTable');
+      const btnCards = document.getElementById('viewBtnCards');
+      if (btnTable && btnCards) {
+        if (state.viewMode === 'table') {
+          btnTable.classList.add('active');
+          btnCards.classList.remove('active');
+        } else {
+          btnTable.classList.remove('active');
+          btnCards.classList.add('active');
+        }
+      }
+
       const totalCount = state.projects.length;
       const favCount = state.projects.filter(p => p.isFavorite).length;
       const activeCount = state.projects.filter(p => p.isActiveWorkspace).length;
@@ -1121,6 +1338,109 @@ class SidebarProvider {
         return;
       }
 
+      // 1. STANDARD: KOMPAKTE TABELLEN-ANSICHT (nur Name & Schnell-Aktionen, mit 1 Klick direkt öffnen)
+      if (state.viewMode === 'table') {
+        container.innerHTML = \`
+          <div class="projects-table-wrap">
+            \${filtered.map(proj => {
+              const isExpanded = state.expandedDetailsFor === proj.id;
+              const isEditingName = state.editingNameFor === proj.id;
+              const folderDiffHint = (proj.customName && proj.customName !== proj.folderName)
+                ? \` (Ordner: \${escapeHtml(proj.folderName)})\`
+                : '';
+
+              return \`
+                <div class="table-row-item \${proj.isActiveWorkspace ? 'active-item' : ''} \${proj.isFavorite ? 'favorite-item' : ''}" data-id="\${escapeHtml(proj.id)}">
+                  <div class="table-main-row" onclick="openInAntigravity('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')">
+                    <!-- Stern Favorit -->
+                    <button class="cell-fav-btn \${proj.isFavorite ? 'is-fav' : ''}" onclick="event.stopPropagation(); toggleFavorite('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="\${proj.isFavorite ? 'Aus Favoriten entfernen' : 'Als Favorit mit Stern markieren'}">
+                      \${proj.isFavorite ? '⭐' : '☆'}
+                    </button>
+
+                    <!-- Status Dino -->
+                    <div class="cell-icon-wrap" title="\${proj.isActiveWorkspace ? 'Aktiv in Antigravity' : 'Bereit'}">
+                      \${proj.isActiveWorkspace ? '🦖' : '📦'}
+                    </div>
+
+                    <!-- Name & Pfad -->
+                    <div class="cell-content">
+                      \${isEditingName ? \`
+                        <div style="display: flex; gap: 4px; align-items: center;" onclick="event.stopPropagation();">
+                          <input type="text" class="inline-input" id="nameInput_\${escapeHtml(proj.id)}" value="\${escapeHtml(proj.name)}" onkeydown="handleNameKey(event, '\${escapeHtml(proj.id)}')">
+                          <button class="tbl-btn tbl-btn-launch" onclick="saveName('\${escapeHtml(proj.id)}')">Speichern</button>
+                          <button class="tbl-btn" onclick="resetName('\${escapeHtml(proj.id)}')">Ordnername</button>
+                          <button class="tbl-btn" onclick="toggleEditName('\${escapeHtml(proj.id)}')">✕</button>
+                        </div>
+                      \` : \`
+                        <div class="cell-title-line">
+                          <span class="cell-title-text" title="Klicken, um „\${escapeHtml(proj.name)}“ sofort in Antigravity zu laden">\${escapeHtml(proj.name)}</span>
+                          <button class="icon-btn" onclick="event.stopPropagation(); toggleEditName('\${escapeHtml(proj.id)}')" title="Name umbenennen">✏️</button>
+                          \${proj.isFavorite ? '<span class="mini-pill fav-pill">⭐</span>' : ''}
+                          \${proj.isActiveWorkspace ? '<span class="mini-pill active-pill">🟢 Aktiv</span>' : ''}
+                        </div>
+                        <div class="cell-sub-line" title="\${escapeHtml(proj.folderPath)}">
+                          \${escapeHtml(proj.folderPath)}\${folderDiffHint}
+                        </div>
+                      \`}
+                    </div>
+
+                    <!-- Schnell-Aktionen -->
+                    <div class="cell-quick-actions" onclick="event.stopPropagation();">
+                      \${proj.isActiveWorkspace ? \`
+                        <button class="tbl-btn tbl-btn-active" onclick="focusAntigravityPanel()" title="Antigravity-Chat fokussieren">
+                          🦖 Aktiv
+                        </button>
+                      \` : \`
+                        <button class="tbl-btn tbl-btn-launch" onclick="openInAntigravity('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Projekt mit 1 Klick in Antigravity laden">
+                          🚀 Öffnen
+                        </button>
+                      \`}
+                      <button class="tbl-btn" onclick="toggleRowDetails('\${escapeHtml(proj.id)}')" title="\${isExpanded ? 'Details verbergen' : 'Details & Beschreibung anzeigen'}">
+                        \${isExpanded ? '▲' : 'ℹ️'}
+                      </button>
+                      <button class="tbl-btn tbl-btn-delete" onclick="removeProject('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Projekt aus dem Dino Dashboard entfernen">
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Inline Details (wenn ausgeklappt) -->
+                  \${isExpanded ? \`
+                    <div class="table-inline-details">
+                      <div style="font-size: 11px; line-height: 1.4; color: var(--vscode-foreground);">
+                        <b>Beschreibung:</b> \${escapeHtml(proj.description)}
+                      </div>
+                      <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        \${(proj.techStack || []).map(t => \`<span class="tag">\${escapeHtml(t)}</span>\`).join('')}
+                        \${(proj.customTags || []).map(t => \`<span class="tag custom-tag">\${escapeHtml(t)}</span>\`).join('')}
+                      </div>
+                      <div style="font-size: 10.5px; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap;">
+                        <span>Dateien: \${proj.stats.fileCount}</span>
+                        <span>Branch: \${escapeHtml(proj.stats.gitBranch || 'Kein Git')}</span>
+                        <span>\${escapeHtml(proj.stats.lastCommit || '')}</span>
+                      </div>
+                      \${proj.customNotes ? \`
+                        <div style="font-size: 11px; padding: 4px 6px; background: rgba(128,128,128,0.06); border-radius: 3px;">
+                          <b>Notizen:</b> \${escapeHtml(proj.customNotes)}
+                        </div>
+                      \` : ''}
+                      <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px;">
+                        <button class="tbl-btn" onclick="addToCurrentWorkspace('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')">➕ Dazu laden</button>
+                        <button class="tbl-btn" onclick="revealInExplorer('\${escapeHtml(proj.folderUri)}')">📂 Explorer</button>
+                        <button class="tbl-btn" onclick="openFolderNewWindow('\${escapeHtml(proj.folderUri)}')">↗ Neues Fenster</button>
+                        \${proj.hasReadme ? \`<button class="tbl-btn" onclick="openReadme('\${escapeHtml(proj.readmeUri || '')}')">📖 README</button>\` : ''}
+                      </div>
+                    </div>
+                  \` : ''}
+                </div>
+              \`;
+            }).join('')}
+          </div>
+        \`;
+        return;
+      }
+
+      // 2. KARTEN-ANSICHT
       container.innerHTML = filtered.map(proj => {
         const healthClass = \`health-\${proj.health.status}\`;
         const isEditingName = state.editingNameFor === proj.id;
@@ -1315,7 +1635,7 @@ class SidebarProvider {
                     ⚡ Ausklappen
                   </button>
                 \` : \`
-                  <button class="btn btn-danger" title="Aus der Dashboard-Liste entfernen (löscht keine Dateien)" onclick="removeProject('\${escapeHtml(proj.folderUri)}')">
+                  <button class="btn btn-danger" title="Aus der Dashboard-Liste entfernen (löscht keine Dateien)" onclick="removeProject('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')">
                     🗑️ Entfernen
                   </button>
                 \`}
@@ -1327,6 +1647,16 @@ class SidebarProvider {
     }
 
     // Aktionen an Extension senden
+    function setViewMode(mode) {
+      state.viewMode = mode;
+      render();
+    }
+
+    function toggleRowDetails(id) {
+      state.expandedDetailsFor = state.expandedDetailsFor === id ? null : id;
+      render();
+    }
+
     function toggleFavorite(uri, name) {
       vscode.postMessage({ command: 'toggleFavorite', uri, name });
     }
@@ -1356,8 +1686,8 @@ class SidebarProvider {
       vscode.postMessage({ command: 'focusAntigravityPanel' });
     }
 
-    function removeProject(uri) {
-      vscode.postMessage({ command: 'removeProject', uri });
+    function removeProject(uri, name) {
+      vscode.postMessage({ command: 'removeProject', uri, name });
     }
 
     function revealInExplorer(uri) {

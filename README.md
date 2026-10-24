@@ -11,6 +11,11 @@ Das **Dino Dashboard** ist deine zentrale Projektverwaltung auf Deutsch. Du kann
 - Oder klicke auf **„Ordner scannen“**, um einen übergeordneten Ordner oder ein Laufwerk automatisch nach allen enthaltenen Projektordnern zu durchsuchen.
 - Alle hinzugefügten Projekte bleiben **dauerhaft im Dino Dashboard gespeichert** (`~/.gemini/dino-dashboard-projects.json`), auch wenn du das Projekt wechselst oder das Programm neu startest.
 
+### 1. Kompakte Tabellenansicht & 1-Klick-Öffnen
+- **Kompakte Tabellenübersicht (Standard)**: Alle Projekte übersichtlich untereinander ohne riesige Kartenblöcke – perfekt auch bei 20+ Projekten.
+- **1-Klick-Projektladen**: Klicke einfach auf den Projektnamen oder das Dino-Icon in der Tabelle, und das Projekt öffnet sich sofort in Antigravity!
+- **Ansicht wählbar**: Über die Buttons **„☰ Tabelle“** und **„☲ Karten“** oben rechts kann jederzeit zwischen kompakter Tabelle und detaillierter Kartenansicht gewechselt werden.
+
 ### 2. ⭐ Favoriten-System (Mit Stern markieren)
 - Klicke bei einem beliebigen Projekt auf das **Stern-Symbol (☆ / ⭐)**, um es als Favorit festzupinnen.
 - Favoriten werden **automatisch an den Anfang der Liste sortiert**, direkt nach aktiven Workspace-Projekten.
