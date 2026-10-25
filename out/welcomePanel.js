@@ -56,7 +56,6 @@ class WelcomePanel {
             }
             const panel = vscode.window.createWebviewPanel(WelcomePanel.viewType, '🦖 Willkommen - Dino Dashboard', column || vscode.ViewColumn.One, {
                 enableScripts: true,
-                retainContextWhenHidden: true,
                 localResourceRoots: [
                     vscode.Uri.joinPath(extensionUri, 'resources')
                 ]
@@ -237,6 +236,7 @@ class WelcomePanel {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${this.panel.webview.cspSource} https: data:; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src ${this.panel.webview.cspSource} 'unsafe-inline';">
     <title>Willkommen - Dino Dashboard</title>
     <style>
         :root {

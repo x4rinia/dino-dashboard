@@ -53,7 +53,7 @@
 
 ## Installation der Extension (.vsix)
 
-1. Lade die Datei `dino-dashboard-1.5.0.vsix` herunter (aus dem Repository oder den [GitHub Releases](https://github.com/X4rinia/dino-dashboard/releases)).
+1. Lade die Datei `dino-dashboard-1.5.1.vsix` herunter (aus dem Repository oder den [GitHub Releases](https://github.com/X4rinia/dino-dashboard/releases)).
 2. Oeffne Antigravity / VS Code / Cursor.
 3. Gehe in das **Erweiterungen-Menue** (`Strg + Umschalt + X`).
 4. Klicke oben rechts auf die drei Punkte (`...`) und waehle **"Aus VSIX installieren..."** (*"Install from VSIX..."*).
@@ -61,7 +61,7 @@
 
 Alternativ per Terminal:
 ```bash
-code --install-extension dino-dashboard-1.5.0.vsix
+code --install-extension dino-dashboard-1.5.1.vsix
 ```
 
 ---

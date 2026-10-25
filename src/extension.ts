@@ -12,20 +12,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Webview Provider für Activity Bar registrieren
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(SidebarProvider.viewType, sidebarProvider, {
-            webviewOptions: {
-                retainContextWhenHidden: true
-            }
-        })
+        vscode.window.registerWebviewViewProvider(SidebarProvider.viewType, sidebarProvider)
     );
 
     // Webview Provider direkt im Explorer-Bereich registrieren
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(SidebarProvider.explorerViewType, sidebarProvider, {
-            webviewOptions: {
-                retainContextWhenHidden: true
-            }
-        })
+        vscode.window.registerWebviewViewProvider(SidebarProvider.explorerViewType, sidebarProvider)
     );
 
     // Statusleisten-Button (immer mit 1 Klick erreichbar)
@@ -75,17 +67,13 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
-    // Beim Start: Dashboard anzeigen, Ordner ausklappen & ggf. Antigravity fokussieren
+    // Beim Start: Zuletzt geöffneten Ordner merken & ggf. Willkommensseite / Antigravity vorbereiten
     const initialSettings = sidebarProvider.getSettings();
     setTimeout(async () => {
         try {
             if (vscode.workspace.workspaceFolders?.[0]) {
                 await context.globalState.update('dinoDashboard.lastOpenedProjectUri', vscode.workspace.workspaceFolders[0].uri.toString());
             }
-
-            try {
-                await vscode.commands.executeCommand('projectOverview.explorerView.focus');
-            } catch { }
 
             if (initialSettings.autoExpandExplorer) {
                 try {
@@ -119,7 +107,7 @@ export function activate(context: vscode.ExtensionContext): void {
         } catch (err) {
             console.warn('[DinoDashboard] Start-Initialisierung abgefangen:', err);
         }
-    }, 600);
+    }, 800);
 
     // Workspace-Ordner-Änderungen überwachen
     context.subscriptions.push(

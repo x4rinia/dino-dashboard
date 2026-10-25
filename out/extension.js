@@ -46,17 +46,9 @@ function activate(context) {
     const autoExpander = new autoExpander_1.AutoExpander();
     const sidebarProvider = new sidebarProvider_1.SidebarProvider(context, scanner, autoExpander);
     // Webview Provider für Activity Bar registrieren
-    context.subscriptions.push(vscode.window.registerWebviewViewProvider(sidebarProvider_1.SidebarProvider.viewType, sidebarProvider, {
-        webviewOptions: {
-            retainContextWhenHidden: true
-        }
-    }));
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider(sidebarProvider_1.SidebarProvider.viewType, sidebarProvider));
     // Webview Provider direkt im Explorer-Bereich registrieren
-    context.subscriptions.push(vscode.window.registerWebviewViewProvider(sidebarProvider_1.SidebarProvider.explorerViewType, sidebarProvider, {
-        webviewOptions: {
-            retainContextWhenHidden: true
-        }
-    }));
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider(sidebarProvider_1.SidebarProvider.explorerViewType, sidebarProvider));
     // Statusleisten-Button (immer mit 1 Klick erreichbar)
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     statusBarItem.text = '🦖 Dino Dashboard';
@@ -93,17 +85,13 @@ function activate(context) {
     }), vscode.commands.registerCommand('projectOverview.showWelcome', () => {
         welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
     }));
-    // Beim Start: Dashboard anzeigen, Ordner ausklappen & ggf. Antigravity fokussieren
+    // Beim Start: Zuletzt geöffneten Ordner merken & ggf. Willkommensseite / Antigravity vorbereiten
     const initialSettings = sidebarProvider.getSettings();
     setTimeout(async () => {
         try {
             if (vscode.workspace.workspaceFolders?.[0]) {
                 await context.globalState.update('dinoDashboard.lastOpenedProjectUri', vscode.workspace.workspaceFolders[0].uri.toString());
             }
-            try {
-                await vscode.commands.executeCommand('projectOverview.explorerView.focus');
-            }
-            catch { }
             if (initialSettings.autoExpandExplorer) {
                 try {
                     await autoExpander.expandWorkspace(initialSettings);
@@ -138,7 +126,7 @@ function activate(context) {
         catch (err) {
             console.warn('[DinoDashboard] Start-Initialisierung abgefangen:', err);
         }
-    }, 600);
+    }, 800);
     // Workspace-Ordner-Änderungen überwachen
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
         try {
