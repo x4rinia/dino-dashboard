@@ -72,6 +72,8 @@ function activate(context) {
             await vscode.commands.executeCommand('projectOverview.sidebarView.focus');
         }
         await sidebarProvider.updateDashboard();
+    }), vscode.commands.registerCommand('projectOverview.createNewProject', async () => {
+        await sidebarProvider.promptCreateNewProject();
     }), vscode.commands.registerCommand('projectOverview.addFolder', async () => {
         await sidebarProvider.promptAddFolder(false);
     }), vscode.commands.registerCommand('projectOverview.scanParentFolder', async () => {

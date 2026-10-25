@@ -2,7 +2,7 @@
 	"name": "dino-dashboard",
 	"displayName": "Dino Dashboard (Deutsch)",
 	"description": "Projekt-Manager & Dashboard auf Deutsch: Favoriten mit Stern markieren, Ordner hinzufügen, Projektnamen & automatische Beschreibungen verwalten und Projekte direkt mit 1 Klick in Antigravity laden.",
-	"version": "1.4.4",
+	"version": "1.4.5",
 	"icon": "resources/icon.png",
 	"publisher": "x4rinia",
 	"repository": {
@@ -62,6 +62,11 @@
 		},
 		"commands": [
 			{
+				"command": "projectOverview.createNewProject",
+				"title": "Dino Dashboard: Neues Projekt anlegen",
+				"icon": "$(new-folder)"
+			},
+			{
 				"command": "projectOverview.showDashboard",
 				"title": "Dino Dashboard: Dashboard anzeigen",
 				"icon": "$(dashboard)"
@@ -94,6 +99,11 @@
 		],
 		"menus": {
 			"view/title": [
+				{
+					"command": "projectOverview.createNewProject",
+					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
+					"group": "navigation@0"
+				},
 				{
 					"command": "projectOverview.addFolder",
 					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 import { ProjectScanner } from './projectScanner';
 import { AutoExpander } from './autoExpander';
 import { DashboardSettings } from './types';
@@ -45,6 +46,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 }
                 case 'addFolder': {
                     await this.promptAddFolder(false);
+                    break;
+                }
+                case 'createNewProject': {
+                    await this.promptCreateNewProject();
                     break;
                 }
                 case 'addAndOpenFolder': {
@@ -268,6 +273,86 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             }
         } else {
             vscode.window.showInformationMessage(`${selected.length} Projekte wurden zum Dino Dashboard hinzugefügt.`);
+        }
+    }
+
+    /**
+     * Erstellt ein neues Projekt: Fragt nach Ordnername und Speicherort,
+     * erstellt den Ordner, initialisiert eine README.md, speichert das Projekt im Dino Dashboard
+     * und wechselt automatisch hinein.
+     */
+    public async promptCreateNewProject(): Promise<void> {
+        // 1. Nach Ordnername / Projektname fragen
+        const folderName = await vscode.window.showInputBox({
+            title: '✨ Neues Projekt erstellen – Schritt 1 von 2',
+            prompt: 'Gib den Namen für den neuen Projektordner ein:',
+            placeHolder: 'z. B. MeinNeuesProjekt',
+            validateInput: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Bitte einen Namen für das Projekt eingeben.';
+                }
+                const invalidChars = /[\\/:*?"<>|]/;
+                if (invalidChars.test(value)) {
+                    return 'Der Name darf keine Sonderzeichen wie \\ / : * ? " < > | enthalten.';
+                }
+                return null;
+            }
+        });
+
+        if (!folderName || !folderName.trim()) {
+            return;
+        }
+
+        const cleanFolderName = folderName.trim();
+
+        // 2. Nach Zielverzeichnis fragen
+        const defaultUri = vscode.workspace.workspaceFolders?.[0]?.uri
+            ? vscode.Uri.file(path.dirname(vscode.workspace.workspaceFolders[0].uri.fsPath))
+            : undefined;
+
+        const selectedParent = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false,
+            defaultUri,
+            title: `✨ Neues Projekt „${cleanFolderName}“ – Schritt 2 von 2: Speicherort wählen`,
+            openLabel: `Ordner „${cleanFolderName}“ hier erstellen`
+        });
+
+        if (!selectedParent || selectedParent.length === 0) {
+            return;
+        }
+
+        const parentDir = selectedParent[0].fsPath;
+        const newProjectPath = path.join(parentDir, cleanFolderName);
+
+        try {
+            if (!fs.existsSync(newProjectPath)) {
+                fs.mkdirSync(newProjectPath, { recursive: true });
+            }
+
+            // Standard README.md erzeugen, falls noch keine vorhanden ist
+            const readmePath = path.join(newProjectPath, 'README.md');
+            if (!fs.existsSync(readmePath)) {
+                const initialReadme = `# 🦖 ${cleanFolderName}\n\nNeues Projekt, erstellt mit dem Dino Dashboard.\n\n## Notizen\n- Projekt initialisiert\n`;
+                fs.writeFileSync(readmePath, initialReadme, 'utf-8');
+            }
+
+            const newProjectUri = vscode.Uri.file(newProjectPath).toString();
+
+            // Im Dino Dashboard registrieren und Status auf '⚡ In Arbeit' setzen
+            await this.scanner.addProjectFolder(newProjectPath);
+            await this.scanner.savePersistedData(newProjectUri, {
+                customName: cleanFolderName,
+                statusHint: '⚡ In Arbeit'
+            });
+
+            vscode.window.showInformationMessage(`🦖 Neues Projekt „${cleanFolderName}“ wurde erstellt! Wechsel zum Projekt...`);
+
+            // Automatisch in das neue Projekt wechseln!
+            await this.loadProjectInAntigravity(newProjectUri, cleanFolderName, false);
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Fehler beim Erstellen des neuen Projekts: ${err?.message || err}`);
         }
     }
 
@@ -1401,14 +1486,17 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     </div>
   </div>
 
-  <!-- Werkzeugleiste: Ordner öffnen, Überordner scannen, Suchen & Favoriten-Filter & Ansichten -->
+  <!-- Werkzeugleiste: Neues Projekt, Ordner öffnen, Überordner scannen, Suchen & Favoriten-Filter & Ansichten -->
   <div class="toolbar">
     <div class="toolbar-buttons">
-      <button class="btn btn-primary" style="flex: 1; justify-content: center; padding: 6px 8px; font-weight: 600;" onclick="addFolder()" title="Einen oder mehrere Projektordner auswählen und im Dashboard speichern">
-        📁 Ordner hinzufügen / öffnen
+      <button class="btn btn-primary" style="flex: 1.1; justify-content: center; padding: 6px 8px; font-weight: 600;" onclick="createNewProject()" title="Ein ganz neues Projekt anlegen: Ordnername und Speicherort wählen, direkt öffnen">
+        ✨ Neues Projekt
+      </button>
+      <button class="btn" style="flex: 1; justify-content: center; padding: 6px 8px;" onclick="addFolder()" title="Bestehenden Projektordner auswählen und im Dashboard speichern">
+        📁 Ordner öffnen
       </button>
       <button class="btn" style="padding: 6px 8px;" onclick="scanParentFolder()" title="Einen Hauptordner nach allen Projekten durchsuchen">
-        🔍 Ordner scannen
+        🔍 Scannen
       </button>
     </div>
     <div style="display: flex; gap: 5px; align-items: center;">
@@ -1538,6 +1626,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 <button class="btn btn-primary" style="justify-content: center; padding: 7px 12px; font-weight: 600;" onclick="openFullDashboard()" title="Dino Dashboard in der Seitenleiste öffnen">
                   🦖 Dino Dashboard öffnen (\${totalCount} \${totalCount === 1 ? 'Projekt' : 'Projekte'}) ➔
                 </button>
+                <button class="btn" style="justify-content: center; padding: 6px 10px;" onclick="createNewProject()" title="Ein ganz neues Projekt anlegen">
+                  ✨ Neues Projekt anlegen...
+                </button>
                 <button class="btn" style="justify-content: center; padding: 6px 10px;" onclick="addFolder()" title="Einen Projektordner öffnen">
                   📁 Projektordner öffnen...
                 </button>
@@ -1596,9 +1687,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 </div>
                 <div class="badges-wrap">
                   <span class="health-pill active-pill">🟢 Aktiv</span>
-                  <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="showDinoDialogueById('\${escapeHtml(activeProject.id)}')" title="Dino-Wächter spricht über dieses Projekt">
-                    🦖 Dino-Wächter
-                  </button>
                 </div>
               </div>
 
@@ -2212,6 +2300,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     function addFolder() {
       vscode.postMessage({ command: 'addFolder' });
+    }
+
+    function createNewProject() {
+      vscode.postMessage({ command: 'createNewProject' });
     }
 
     function scanParentFolder() {

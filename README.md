@@ -1,57 +1,65 @@
 # 🦖 Dino Dashboard (Deutsch) – Projekt-Manager für Antigravity & VS Code
 
-Das **Dino Dashboard** ist deine zentrale Projektverwaltung auf Deutsch. Du kannst damit beliebige Projektordner hinzufügen, ihnen eigene Namen geben (standardmäßig wird automatisch der Ordnername übernommen), Beschreibungen automatisch aus dem Projektinhalt/README erkennen lassen und jedes Projekt mit **einem einzigen Klick direkt in Antigravity laden**, um sofort daran weiterzuarbeiten.
+![Dino Dashboard Vorschau](resources/preview.png)
+
+> **Das Dino Dashboard** ist deine zentrale Projektverwaltung auf Deutsch für Antigravity & VS Code. Du kannst neue Projekte im Handumdrehen anlegen, bestehende Ordner hinzufügen, eigene Projektnamen vergeben, Status-Hinweise setzen, ausführliche Notizen festhalten und jedes Projekt mit **einem einzigen Klick direkt in Antigravity laden**, um sofort weiterzuarbeiten.
 
 ---
 
-## Hauptfunktionen
+## 🚀 Hauptfunktionen
 
-### 1. Projektordner hinzufügen & dauerhaft speichern
-- Klicke oben im Dashboard auf **„Ordner hinzufügen / öffnen“**, um einzelne oder mehrere Projektordner auszuwählen.
-- Oder klicke auf **„Ordner scannen“**, um einen übergeordneten Ordner oder ein Laufwerk automatisch nach allen enthaltenen Projektordnern zu durchsuchen.
-- Alle hinzugefügten Projekte bleiben **dauerhaft im Dino Dashboard gespeichert** (`~/.gemini/dino-dashboard-projects.json`), auch wenn du das Projekt wechselst oder das Programm neu startest.
+### 1. ✨ Neues Projekt anlegen (mit automatischem Wechsel)
+- Klicke oben auf **„✨ Neues Projekt“**:
+  1. Gib den gewünschten Projektnamen / Ordnernamen ein (z. B. `MeinNeuesProjekt`).
+  2. Wähle das Zielverzeichnis aus, in dem der neue Ordner erstellt werden soll.
+- Das Dashboard erstellt den Ordner, initialisiert eine passende `README.md`, trägt das Projekt mit Status `⚡ In Arbeit` ein und **wechselt sofort automatisch in das neue Projekt**!
 
-### 2. Kompakte Tabellenansicht & 1-Klick-Öffnen
-- **Kompakte Tabellenübersicht (Standard)**: Alle Projekte übersichtlich untereinander ohne riesige Kartenblöcke – perfekt auch bei 20+ Projekten.
-- **1-Klick-Projektladen**: Klicke einfach auf den Projektnamen oder das Dino-Icon in der Tabelle, und das Projekt öffnet sich sofort in Antigravity!
-- **Ansicht wählbar**: Über die Buttons **„☰ Tabelle“** und **„☲ Karten“** oben rechts kann jederzeit zwischen kompakter Tabelle und detaillierter Kartenansicht gewechselt werden.
+### 2. 📁 Projektordner hinzufügen & dauerhaft speichern
+- Klicke auf **„📁 Ordner öffnen“**, um bestehende Projektordner auszuwählen und im Dashboard dauerhaft zu sichern.
+- Klicke auf **„🔍 Scannen“**, um einen übergeordneten Hauptordner oder ein Laufwerk automatisch nach allen Unterprojekten zu durchsuchen.
+- Alle Projekte bleiben **dauerhaft gespeichert** (`~/.gemini/dino-dashboard-projects.json`), auch über Neustarts hinweg.
 
-### 3. ⭐ Favoriten-System (Mit Stern markieren)
-- Klicke bei einem beliebigen Projekt auf das **Stern-Symbol (☆ / ⭐)**, um es als Favorit festzupinnen.
-- Favoriten werden **automatisch an den Anfang der Liste sortiert**, direkt nach aktiven Workspace-Projekten.
-- Über den Button **„⭐ Favoriten“** in der Werkzeugleiste kannst du mit einem Klick alle Nicht-Favoriten ausblenden und hast nur deine wichtigsten Projekte im Blick.
+### 3. ℹ️ Status-Hinweise & 🦖 Dino-Wächter Dialog
+- **Status per Klick auf `ℹ️`**: Wähle blitzschnell den aktuellen Projektstatus:
+  - `⚡ In Arbeit`
+  - `✅ Abgeschlossen`
+  - `⏳ Pausiert`
+  - `🐛 Bugfix`
+  - `✨ In Planung`
+- **🦖 Dino-Wächter Sprechfenster**: Klicke oben auf den Dino-Wächter oder auf das Dino-Icon / Status-Badge eines Projekts – ein modales Dialogfenster öffnet sich und der Dino berichtet dir den Status und die Notizen deines Projekts!
 
-### 4. Projektnamen vergeben (Ordnername als Standard)
-- Beim Hinzufügen übernimmt das Dino Dashboard **zuerst automatisch den Ordnernamen** als Projektnamen.
-- Über den Button **„Name“** neben dem Projekttitel kannst du dem Projekt jederzeit einen eigenen Wunschnamen geben (oder mit **„Ordnername“** wieder auf den Ordnernamen zurücksetzen).
+### 4. 📌 Ausführliche Notizen (Mehrzeilig)
+- Jedes Projekt besitzt ein komfortables mehrzeiliges Notizfeld (`textarea`).
+- Halte hier ausführliche To-Dos, aktuelle Meilensteine oder Fehlerbeschreibungen (z. B. *„ist in arbeit, button noch verbuggt etc.“*) fest.
+- In der Tabelle siehst du eine praktische Vorschau mit Klick zur Bearbeitung.
 
-### 5. Automatische Projektbeschreibung (aus README & Ordnerinhalt)
-- Das Dashboard untersucht automatisch den Inhalt jedes Projektordners:
-  - Liest `README.md`, `package.json`, `pyproject.toml`, `Cargo.toml`, `index.html` (`<title>` / `<meta>`) oder Python-Docstrings (`main.py` / `app.py`).
-  - Falls keine README existiert, erkennt es anhand der vorhandenen Dateien und Unterordner automatisch, worum es sich handelt (z. B. *Web- & Spiel-Projekt*, *Python-Anwendung*, *Kodi Addon*, *C#/.NET-Projekt*) und erstellt eine passende deutsche Beschreibung.
-- Über **„Ändern“** kannst du die Beschreibung jederzeit selbst anpassen oder per **„Automatisch erkennen“** neu generieren lassen.
+### 5. ☰ Kompakte Tabellenansicht & 1-Klick-Öffnen
+- **Kompakte Tabellenübersicht (Standard)**: Alle Projekte übersichtlich untereinander – perfekt auch bei 20+ Projekten.
+- **1-Klick-Projektladen**: Klicke auf **„🚀 Öffnen“** oder auf das Dino-Icon, und das Projekt öffnet sich sofort in Antigravity!
+- **Ansicht wählbar**: Über die Buttons **„☰ Tabelle“** und **„☲ Karten“** oben rechts kann jederzeit zwischen kompakter Tabelle und detaillierten Karten gewechselt werden.
 
-### 6. Mit 1 Klick in Antigravity laden & weiterarbeiten
-- Klicke bei einem beliebigen Projekt auf **„Projekt in Antigravity laden & arbeiten“**:
-  - Das Projekt wird automatisch in Antigravity registriert (`~/.gemini/config/projects/`).
-  - Der Projektordner wird sofort geladen, die wichtigsten Unterordner werden im Explorer ausgeklappt und das **Antigravity-Panel** wird aktiviert – ganz ohne manuelles *Datei -> Ordner öffnen*!
-- Mit **„Dazu laden“** kannst du ein weiteres Projekt zusätzlich in deinen aktuellen Workspace holen, ohne das Fenster neu zu laden.
+### 6. ⭐ Favoriten-System (Mit Stern markieren)
+- Klicke bei einem Projekt auf das **Stern-Symbol (☆ / ⭐)**, um es als Favorit festzupinnen.
+- Favoriten werden **automatisch an den Anfang der Liste sortiert**.
+- Über den Button **„⭐ Favoriten“** in der Leiste filterst du mit einem Klick alle Nicht-Favoriten heraus.
+
+### 7. 🏷️ Eigene Namen & automatische Projektbeschreibung
+- Passe Projektnamen mit Klick auf **✏️** an oder setze sie auf den Ordnernamen zurück.
+- Das Dashboard analysiert automatisch den Inhalt (README, `package.json`, Python, HTML etc.) und generiert deutsche Projektbeschreibungen.
 
 ---
 
 ## 📦 Installation der Extension (.vsix)
 
-Für dich und andere Nutzer:
-
-1. Lade die Datei `dino-dashboard-1.4.1.vsix` herunter (direkt aus dem Repository oder aus den [GitHub Releases](https://github.com/X4rinia/dino-dashboard/releases)).
+1. Lade die Datei `dino-dashboard-1.4.5.vsix` herunter (aus dem Repository oder den [GitHub Releases](https://github.com/X4rinia/dino-dashboard/releases)).
 2. Öffne Antigravity / VS Code / Cursor.
 3. Gehe in das **Erweiterungen-Menü** (`Strg + Umschalt + X`).
-4. Klicke oben rechts auf die drei Punkte (`...`) und wähle **„Aus VSIX installieren...“** (oder *„Install from VSIX...“*).
+4. Klicke oben rechts auf die drei Punkte (`...`) und wähle **„Aus VSIX installieren...“** (*„Install from VSIX...“*).
 5. Wähle die heruntergeladene `.vsix`-Datei aus – fertig!
 
-Alternativ per Terminal / Konsole:
+Alternativ per Terminal:
 ```bash
-code --install-extension dino-dashboard-1.4.1.vsix
+code --install-extension dino-dashboard-1.4.5.vsix
 ```
 
 ---

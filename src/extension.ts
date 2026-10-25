@@ -45,6 +45,9 @@ export function activate(context: vscode.ExtensionContext): void {
             }
             await sidebarProvider.updateDashboard();
         }),
+        vscode.commands.registerCommand('projectOverview.createNewProject', async () => {
+            await sidebarProvider.promptCreateNewProject();
+        }),
         vscode.commands.registerCommand('projectOverview.addFolder', async () => {
             await sidebarProvider.promptAddFolder(false);
         }),
