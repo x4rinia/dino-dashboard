@@ -1677,17 +1677,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           if (headerBarEl) headerBarEl.style.display = 'none';
           container.innerHTML = \`
             <div class="empty-state" style="padding: 10px 8px; margin-top: 2px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 6px; text-align: left;">
-                  <span style="font-size: 20px;">🦖</span>
-                  <div>
-                    <div style="font-size: 12px; font-weight: 700; color: var(--vscode-foreground); line-height: 1.2;">Kein Projekt geöffnet</div>
-                    <div style="font-size: 10.5px; color: var(--text-muted);\">\${totalCount} \${totalCount === 1 ? 'Projekt' : 'Projekte'} gespeichert</div>
-                  </div>
-                </div>
-                <div class="mascot-badge" onclick="showDinoDialogue(null)" title="Dino-Wächter um Rat fragen" style="padding: 2px 7px; font-size: 10.5px; cursor: pointer;">
-                  <span class="mascot-icon">🦖</span>
-                  <span>Dino-Wächter</span>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 2px 4px;">
+                <span style="font-size: 22px; line-height: 1;">🦖</span>
+                <div style="text-align: left;">
+                  <div style="font-size: 12.5px; font-weight: 700; color: var(--vscode-foreground); line-height: 1.2;">Kein Projekt geöffnet</div>
+                  <div style="font-size: 10.5px; color: var(--text-muted);">\${totalCount} \${totalCount === 1 ? 'Projekt' : 'Projekte'} gespeichert</div>
                 </div>
               </div>
 
