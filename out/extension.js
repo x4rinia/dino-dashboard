@@ -97,46 +97,78 @@ function activate(context) {
     const initialSettings = sidebarProvider.getSettings();
     setTimeout(async () => {
         try {
-            await vscode.commands.executeCommand('projectOverview.explorerView.focus');
-        }
-        catch { }
-        if (initialSettings.autoExpandExplorer) {
-            await autoExpander.expandWorkspace(initialSettings);
-        }
-        const justLoadedPath = context.globalState.get('dinoDashboard.justLoadedProject');
-        if (justLoadedPath) {
-            await context.globalState.update('dinoDashboard.justLoadedProject', undefined);
-            if (initialSettings.autoFocusAntigravity) {
+            if (vscode.workspace.workspaceFolders?.[0]) {
+                await context.globalState.update('dinoDashboard.lastOpenedProjectUri', vscode.workspace.workspaceFolders[0].uri.toString());
+            }
+            try {
+                await vscode.commands.executeCommand('projectOverview.explorerView.focus');
+            }
+            catch { }
+            if (initialSettings.autoExpandExplorer) {
                 try {
-                    await vscode.commands.executeCommand('antigravity.panel.focus');
+                    await autoExpander.expandWorkspace(initialSettings);
                 }
                 catch { }
             }
-            const projName = path.basename(justLoadedPath);
-            vscode.window.showInformationMessage(`🦖 Projekt „${projName}“ wurde automatisch in Antigravity geladen – du kannst direkt weiterarbeiten!`);
-        }
-        else {
-            // Wenn kein Projekt/Ordner geöffnet ist: Willkommensseite im Editor anzeigen!
-            const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
-            if (isNoFolderOpened) {
-                welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
+            const justLoadedPath = context.globalState.get('dinoDashboard.justLoadedProject');
+            if (justLoadedPath) {
+                await context.globalState.update('dinoDashboard.justLoadedProject', undefined);
+                if (initialSettings.autoFocusAntigravity) {
+                    try {
+                        await vscode.commands.executeCommand('antigravity.panel.focus');
+                    }
+                    catch { }
+                }
+                const projName = path.basename(justLoadedPath);
+                vscode.window.showInformationMessage(`🦖 Projekt „${projName}“ wurde automatisch in Antigravity geladen – du kannst direkt weiterarbeiten!`);
             }
+            else {
+                // Wenn kein Projekt/Ordner geöffnet ist: Willkommensseite im Editor anzeigen!
+                const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+                if (isNoFolderOpened) {
+                    try {
+                        welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
+                    }
+                    catch (e) {
+                        console.warn('[WelcomePanel] Startfehler abgefangen:', e);
+                    }
+                }
+            }
+        }
+        catch (err) {
+            console.warn('[DinoDashboard] Start-Initialisierung abgefangen:', err);
         }
     }, 600);
     // Workspace-Ordner-Änderungen überwachen
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-        autoExpander.reset();
-        const settings = sidebarProvider.getSettings();
-        await sidebarProvider.updateDashboard();
-        if (settings.autoExpandExplorer) {
-            await autoExpander.expandWorkspace(settings);
+        try {
+            autoExpander.reset();
+            const settings = sidebarProvider.getSettings();
+            await sidebarProvider.updateDashboard();
+            if (vscode.workspace.workspaceFolders?.[0]) {
+                await context.globalState.update('dinoDashboard.lastOpenedProjectUri', vscode.workspace.workspaceFolders[0].uri.toString());
+            }
+            if (settings.autoExpandExplorer) {
+                try {
+                    await autoExpander.expandWorkspace(settings);
+                }
+                catch { }
+            }
+            const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+            if (isNoFolderOpened) {
+                try {
+                    welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
+                }
+                catch (e) {
+                    console.warn('[WelcomePanel] Wechsel abgefangen:', e);
+                }
+            }
+            else {
+                welcomePanel_1.WelcomePanel.currentPanel?.dispose();
+            }
         }
-        const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
-        if (isNoFolderOpened) {
-            welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
-        }
-        else {
-            welcomePanel_1.WelcomePanel.currentPanel?.dispose();
+        catch (err) {
+            console.warn('[DinoDashboard] Workspace-Änderung abgefangen:', err);
         }
     }));
     // Einstellungen überwachen

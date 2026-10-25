@@ -365,11 +365,18 @@ class SidebarProvider {
      */
     async closeCurrentProject() {
         try {
+            const first = vscode.workspace.workspaceFolders?.[0];
+            if (first) {
+                await this.context.globalState.update('dinoDashboard.lastOpenedProjectUri', first.uri.toString());
+            }
             await vscode.commands.executeCommand('workbench.action.closeFolder');
         }
         catch (err) {
-            vscode.window.showErrorMessage(`Fehler beim Schließen des Projekts: ${err?.message || err}`);
+            console.warn('[DinoDashboard] Hinweis beim Schließen des Projekts:', err);
         }
+    }
+    getContext() {
+        return this.context;
     }
     /**
      * Scannt einen Überordner und importiert alle darin enthaltenen Projektordner.
@@ -409,6 +416,7 @@ class SidebarProvider {
         this.scanner.ensureAntigravityProjectRegistered(fsPath, effectiveName);
         // 2. Flag setzen, damit nach dem Laden automatisch Explorer & Antigravity-Panel fokussiert werden
         await this.context.globalState.update('dinoDashboard.justLoadedProject', fsPath);
+        await this.context.globalState.update('dinoDashboard.lastOpenedProjectUri', uriStr);
         if (addToCurrentWorkspace) {
             const existing = vscode.workspace.workspaceFolders || [];
             const alreadyOpen = existing.some(f => f.uri.fsPath.toLowerCase() === fsPath.toLowerCase());

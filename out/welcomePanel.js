@@ -43,28 +43,35 @@ class WelcomePanel {
     scanner;
     sidebarProvider;
     disposables = [];
+    isDisposed = false;
     static createOrShow(extensionUri, scanner, sidebarProvider) {
-        const column = vscode.window.activeTextEditor
-            ? vscode.window.activeTextEditor.viewColumn
-            : undefined;
-        if (WelcomePanel.currentPanel) {
-            WelcomePanel.currentPanel.panel.reveal(column || vscode.ViewColumn.One);
-            WelcomePanel.currentPanel.update();
+        try {
+            const column = vscode.window.activeTextEditor
+                ? vscode.window.activeTextEditor.viewColumn
+                : undefined;
+            if (WelcomePanel.currentPanel && !WelcomePanel.currentPanel.isDisposed) {
+                WelcomePanel.currentPanel.panel.reveal(column || vscode.ViewColumn.One);
+                WelcomePanel.currentPanel.update();
+                return WelcomePanel.currentPanel;
+            }
+            const panel = vscode.window.createWebviewPanel(WelcomePanel.viewType, '🦖 Willkommen - Dino Dashboard', column || vscode.ViewColumn.One, {
+                enableScripts: true,
+                retainContextWhenHidden: true,
+                localResourceRoots: [
+                    vscode.Uri.joinPath(extensionUri, 'resources')
+                ]
+            });
+            try {
+                panel.iconPath = vscode.Uri.joinPath(extensionUri, 'resources', 'icon.png');
+            }
+            catch { }
+            WelcomePanel.currentPanel = new WelcomePanel(panel, extensionUri, scanner, sidebarProvider);
             return WelcomePanel.currentPanel;
         }
-        const panel = vscode.window.createWebviewPanel(WelcomePanel.viewType, '🦖 Willkommen - Dino Dashboard', column || vscode.ViewColumn.One, {
-            enableScripts: true,
-            retainContextWhenHidden: true,
-            localResourceRoots: [
-                vscode.Uri.joinPath(extensionUri, 'resources')
-            ]
-        });
-        try {
-            panel.iconPath = vscode.Uri.joinPath(extensionUri, 'resources', 'icon.png');
+        catch (err) {
+            console.warn('[WelcomePanel] Konnte WebviewPanel nicht erstellen:', err);
+            throw err;
         }
-        catch { }
-        WelcomePanel.currentPanel = new WelcomePanel(panel, extensionUri, scanner, sidebarProvider);
-        return WelcomePanel.currentPanel;
     }
     constructor(panel, extensionUri, scanner, sidebarProvider) {
         this.panel = panel;
@@ -74,51 +81,74 @@ class WelcomePanel {
         this.update();
         this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
         this.panel.webview.onDidReceiveMessage(async (message) => {
-            switch (message.command) {
-                case 'loadProject': {
-                    if (message.uri) {
-                        await this.sidebarProvider.loadProjectInAntigravity(message.uri, message.name || 'Projekt', false);
+            if (this.isDisposed)
+                return;
+            try {
+                switch (message.command) {
+                    case 'loadProject': {
+                        if (message.uri) {
+                            await this.sidebarProvider.loadProjectInAntigravity(message.uri, message.name || 'Projekt', false);
+                        }
+                        break;
                     }
-                    break;
-                }
-                case 'createNewProject': {
-                    await this.sidebarProvider.promptCreateNewProject();
-                    break;
-                }
-                case 'addFolder': {
-                    await this.sidebarProvider.promptAddFolder(false);
-                    await this.update();
-                    break;
-                }
-                case 'showDashboard': {
-                    try {
-                        await vscode.commands.executeCommand('projectOverview.sidebarView.focus');
+                    case 'createNewProject': {
+                        await this.sidebarProvider.promptCreateNewProject();
+                        break;
                     }
-                    catch {
-                        await vscode.commands.executeCommand('projectOverview.explorerView.focus');
+                    case 'addFolder': {
+                        await this.sidebarProvider.promptAddFolder(false);
+                        await this.update();
+                        break;
                     }
-                    await this.sidebarProvider.updateDashboard();
-                    break;
+                    case 'showDashboard': {
+                        try {
+                            await vscode.commands.executeCommand('projectOverview.sidebarView.focus');
+                        }
+                        catch {
+                            await vscode.commands.executeCommand('projectOverview.explorerView.focus');
+                        }
+                        await this.sidebarProvider.updateDashboard();
+                        break;
+                    }
+                    case 'openSettings': {
+                        await vscode.commands.executeCommand('workbench.action.openSettings', 'projectSummary');
+                        break;
+                    }
                 }
-                case 'openSettings': {
-                    await vscode.commands.executeCommand('workbench.action.openSettings', 'projectSummary');
-                    break;
-                }
+            }
+            catch (err) {
+                console.warn('[WelcomePanel] Message Handler Fehler:', err);
             }
         }, null, this.disposables);
     }
     async update() {
-        const settings = this.sidebarProvider.getSettings();
-        const projects = await this.scanner.scanAll(settings);
-        this.panel.webview.html = this.getHtml(projects);
+        if (this.isDisposed)
+            return;
+        try {
+            const settings = this.sidebarProvider.getSettings();
+            const projects = await this.scanner.scanAll(settings);
+            if (this.isDisposed)
+                return;
+            this.panel.webview.html = this.getHtml(projects);
+        }
+        catch (err) {
+            console.warn('[WelcomePanel] Fehler beim Aktualisieren:', err);
+        }
     }
     dispose() {
+        this.isDisposed = true;
         WelcomePanel.currentPanel = undefined;
-        this.panel.dispose();
+        try {
+            this.panel.dispose();
+        }
+        catch { }
         while (this.disposables.length) {
             const x = this.disposables.pop();
             if (x) {
-                x.dispose();
+                try {
+                    x.dispose();
+                }
+                catch { }
             }
         }
     }
@@ -158,23 +188,42 @@ class WelcomePanel {
             }
             return `<span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; color: ${color}; background: ${bg}; border: 1px solid ${border}; white-space: nowrap;">${escapeHtml(hint)}</span>`;
         };
-        // Das letzte / aktive oder erste Projekt als Highlight
-        const lastProject = projects.length > 0 ? projects[0] : null;
-        // Kurze Zusammenfassung der letzten 3-4 Projekte (ohne zu verwirren!)
-        const recentProjects = projects.slice(0, 4);
-        const recentProjectsHtml = recentProjects.map(proj => {
+        // 1. TATSÄCHLICH ZULETZT GEÖFFNETES PROJEKT ERMITTELN:
+        const lastUri = this.sidebarProvider.getContext().globalState.get('dinoDashboard.lastOpenedProjectUri');
+        let lastProject = null;
+        if (lastUri) {
+            lastProject = projects.find(p => {
+                if (p.folderUri.toLowerCase() === lastUri.toLowerCase())
+                    return true;
+                try {
+                    const parsedPath = vscode.Uri.parse(lastUri).fsPath.toLowerCase();
+                    if (p.folderPath.toLowerCase() === parsedPath)
+                        return true;
+                }
+                catch { }
+                return false;
+            }) || null;
+        }
+        // Falls noch keine lastUri gespeichert ist: Fallback auf ersten Favoriten oder erstes Projekt
+        if (!lastProject && projects.length > 0) {
+            lastProject = projects.find(p => p.isFavorite) || projects[0];
+        }
+        // 2. FAVORITEN ERMITTELN (AUF MAXIMAL 3 BESCHRÄNKEN):
+        const favProjects = projects.filter(p => p.isFavorite).slice(0, 3);
+        const favProjectsHtml = favProjects.map(proj => {
             const statusPill = getStatusPill(proj.statusHint);
             const techStr = (proj.techStack || []).slice(0, 3).join(', ');
             return `
                 <div class="summary-item" onclick="loadProject('${escapeHtml(proj.folderUri)}', '${escapeHtml(proj.name)}')">
                     <div style="flex: 1; min-width: 0;">
                         <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: #e3b341; font-size: 14px; line-height: 1;">⭐</span>
                             <span class="summary-name">${escapeHtml(proj.name)}</span>
                             ${statusPill}
                         </div>
                         <div class="summary-desc">
                             ${techStr ? `<span style="color: var(--accent); font-weight: 600;">${escapeHtml(techStr)}</span> • ` : ''}
-                            ${escapeHtml(proj.description || proj.folderPath)}
+                            ${escapeHtml(proj.customNotes || proj.description || proj.folderPath)}
                         </div>
                     </div>
                     <button class="btn btn-sm" onclick="event.stopPropagation(); loadProject('${escapeHtml(proj.folderUri)}', '${escapeHtml(proj.name)}')" title="Projekt öffnen">
@@ -309,7 +358,7 @@ class WelcomePanel {
             flex-wrap: wrap;
         }
 
-        /* Kurze Zusammenfassung der letzten Projekte */
+        /* Favoriten Sektion (max. 3) */
         .section-box {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -336,7 +385,7 @@ class WelcomePanel {
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            padding: 8px 10px;
+            padding: 9px 12px;
             border-radius: 6px;
             background: rgba(128, 128, 128, 0.04);
             border: 1px solid rgba(128, 128, 128, 0.1);
@@ -468,26 +517,26 @@ class WelcomePanel {
             </div>
         ` : ''}
 
-        <!-- Kurze Zusammenfassung der letzten Projekte -->
-        ${recentProjects.length > 0 ? `
-            <div class="section-box">
-                <div class="section-header">
-                    <span>📋 Zuletzt bearbeitete Projekte (${recentProjects.length})</span>
-                    <span style="font-size: 11px; text-transform: none; color: var(--text-muted);">${projects.length} Projekte insgesamt</span>
-                </div>
-                ${recentProjectsHtml}
+        <!-- Favoriten Sektion (Maximal 3) -->
+        <div class="section-box">
+            <div class="section-header">
+                <span>⭐ Deine Favoriten ${favProjects.length > 0 ? `(${favProjects.length} von max. 3)` : ''}</span>
+                <span style="font-size: 11px; text-transform: none; color: var(--text-muted);">${projects.length} Projekte insgesamt</span>
+            </div>
 
-                <div style="margin-top: 6px;">
-                    <button class="btn btn-dashboard" onclick="showDashboard()" title="Öffnet das vollständige Dino Dashboard in der Seitenleiste">
-                        🦖 Alle ${projects.length} Projekte im Dino Dashboard anzeigen ➔
-                    </button>
+            ${favProjects.length > 0 ? favProjectsHtml : `
+                <div style="padding: 14px 10px; text-align: center; color: var(--text-muted); font-size: 12px; background: rgba(128,128,128,0.04); border-radius: 6px;">
+                    <span>⭐ Noch keine Favoriten markiert.</span>
+                    <div style="font-size: 11px; margin-top: 4px;">Klicke im Dino Dashboard auf den Stern neben einem Projekt, um bis zu 3 Favoriten hier auf der Startseite anzuheften.</div>
                 </div>
+            `}
+
+            <div style="margin-top: 6px;">
+                <button class="btn btn-dashboard" onclick="showDashboard()" title="Öffnet das vollständige Dino Dashboard in der Seitenleiste">
+                    🦖 Alle ${projects.length} Projekte im Dino Dashboard anzeigen ➔
+                </button>
             </div>
-        ` : `
-            <div style="text-align: center; padding: 20px; color: var(--text-muted);">
-                Noch keine Projekte gespeichert. Klicke oben auf „✨ Neues Projekt anlegen“ oder „📁 Projektordner öffnen“.
-            </div>
-        `}
+        </div>
     </div>
 
     <script>

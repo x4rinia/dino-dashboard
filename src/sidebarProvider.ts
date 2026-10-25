@@ -366,10 +366,18 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
      */
     public async closeCurrentProject(): Promise<void> {
         try {
+            const first = vscode.workspace.workspaceFolders?.[0];
+            if (first) {
+                await this.context.globalState.update('dinoDashboard.lastOpenedProjectUri', first.uri.toString());
+            }
             await vscode.commands.executeCommand('workbench.action.closeFolder');
         } catch (err: any) {
-            vscode.window.showErrorMessage(`Fehler beim Schließen des Projekts: ${err?.message || err}`);
+            console.warn('[DinoDashboard] Hinweis beim Schließen des Projekts:', err);
         }
+    }
+
+    public getContext(): vscode.ExtensionContext {
+        return this.context;
     }
 
     /**
@@ -417,6 +425,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         // 2. Flag setzen, damit nach dem Laden automatisch Explorer & Antigravity-Panel fokussiert werden
         await this.context.globalState.update('dinoDashboard.justLoadedProject', fsPath);
+        await this.context.globalState.update('dinoDashboard.lastOpenedProjectUri', uriStr);
 
         if (addToCurrentWorkspace) {
             const existing = vscode.workspace.workspaceFolders || [];
