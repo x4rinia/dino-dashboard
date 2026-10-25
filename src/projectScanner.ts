@@ -459,6 +459,7 @@ export class ProjectScanner {
             customDescription: persisted.customDescription,
             isActiveWorkspace,
             isFavorite: !!persisted.isFavorite,
+            statusHint: persisted.statusHint,
             techStack,
             stats,
             hasReadme: readmeInfo.hasReadme,
@@ -886,6 +887,7 @@ export class ProjectScanner {
         customName?: string;
         customDescription?: string;
         notes: string;
+        statusHint?: string;
         tags: string[];
         isFavorite?: boolean;
         lastOpened?: number;
@@ -903,6 +905,7 @@ export class ProjectScanner {
                     customName: parsed.customName ?? regEntry.customName,
                     customDescription: parsed.customDescription ?? regEntry.customDescription,
                     notes: parsed.notes ?? regEntry.notes ?? '',
+                    statusHint: parsed.statusHint ?? regEntry.statusHint,
                     tags: Array.isArray(parsed.tags) ? parsed.tags : (regEntry.tags || []),
                     isFavorite: parsed.isFavorite !== undefined ? !!parsed.isFavorite : (regEntry.isFavorite !== undefined ? !!regEntry.isFavorite : false),
                     lastOpened: regEntry.lastOpened
@@ -914,6 +917,7 @@ export class ProjectScanner {
             customName: regEntry.customName,
             customDescription: regEntry.customDescription,
             notes: regEntry.notes || '',
+            statusHint: regEntry.statusHint,
             tags: regEntry.tags || [],
             isFavorite: !!regEntry.isFavorite,
             lastOpened: regEntry.lastOpened
@@ -926,6 +930,7 @@ export class ProjectScanner {
             customName?: string;
             customDescription?: string;
             notes?: string;
+            statusHint?: string;
             tags?: string[];
             isFavorite?: boolean;
         }
@@ -941,6 +946,7 @@ export class ProjectScanner {
             customName: data.customName !== undefined ? data.customName : current.customName,
             customDescription: data.customDescription !== undefined ? data.customDescription : current.customDescription,
             notes: data.notes !== undefined ? data.notes : current.notes,
+            statusHint: data.statusHint !== undefined ? data.statusHint : current.statusHint,
             tags: data.tags !== undefined ? data.tags : current.tags,
             isFavorite: data.isFavorite !== undefined ? data.isFavorite : current.isFavorite
         };
@@ -957,6 +963,7 @@ export class ProjectScanner {
             customName: updated.customName,
             customDescription: updated.customDescription,
             notes: updated.notes,
+            statusHint: updated.statusHint,
             tags: updated.tags,
             isFavorite: updated.isFavorite
         };
@@ -994,6 +1001,7 @@ export class ProjectScanner {
             autoDescription: `Projektordner „${folderName}“`,
             isActiveWorkspace,
             isFavorite: false,
+            statusHint: undefined,
             techStack: ['Ordner'],
             stats: { fileCount: 0, dirCount: 0 },
             hasReadme: false,

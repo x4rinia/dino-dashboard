@@ -19,6 +19,7 @@ export interface SavedProjectEntry {
     customName?: string;
     customDescription?: string;
     notes?: string;
+    statusHint?: string;
     tags?: string[];
     isFavorite?: boolean;
     addedAt?: number;
@@ -37,6 +38,7 @@ export interface ProjectMetadata {
     customDescription?: string;
     isActiveWorkspace: boolean;
     isFavorite: boolean;
+    statusHint?: string;
     techStack: string[];
     stats: ProjectStats;
     hasReadme: boolean;
