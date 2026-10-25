@@ -35,7 +35,30 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [this.context.extensionUri]
         };
 
-        webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
+        const render = () => {
+            if (_token.isCancellationRequested) return;
+            if (!webviewView.webview.html) {
+                try {
+                    webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
+                } catch (err) {
+                    console.warn('[DinoDashboard] Fehler beim Rendern der Webview:', err);
+                }
+            }
+        };
+
+        if (webviewView.visible) {
+            render();
+        }
+
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible) {
+                if (!webviewView.webview.html) {
+                    render();
+                } else {
+                    this.updateDashboard();
+                }
+            }
+        });
 
         webviewView.webview.onDidReceiveMessage(async (message) => {
             switch (message.command) {
@@ -227,8 +250,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 }
             }
         });
-
-        this.updateDashboard();
     }
 
     /**
@@ -469,6 +490,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const workspaceName = vscode.workspace.name || 'Workspace';
 
         for (const view of this._views) {
+            if (!view.visible) {
+                continue;
+            }
             const isExplorer = view.viewType === SidebarProvider.explorerViewType;
             const payload = {
                 type: 'stateUpdate',
@@ -1607,7 +1631,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     </div>
   </div>
 
-  <script nonce="${nonce}">
+  <script>
     const vscode = acquireVsCodeApi();
 
     let state = {

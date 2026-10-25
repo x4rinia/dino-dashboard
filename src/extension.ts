@@ -94,9 +94,13 @@ export function activate(context: vscode.ExtensionContext): void {
                     `🦖 Projekt „${projName}“ wurde automatisch in Antigravity geladen – du kannst direkt weiterarbeiten!`
                 );
             } else {
-                // Wenn kein Projekt/Ordner geöffnet ist: Willkommensseite im Editor anzeigen!
+                // Wenn kein Projekt/Ordner geöffnet ist: Dino Dashboard im Explorer fokussieren & Willkommensseite im Editor anzeigen!
                 const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
                 if (isNoFolderOpened) {
+                    try {
+                        await vscode.commands.executeCommand('projectOverview.explorerView.focus');
+                    } catch { }
+
                     try {
                         WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
                     } catch (e) {
@@ -130,6 +134,7 @@ export function activate(context: vscode.ExtensionContext): void {
                 const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
                 if (isNoFolderOpened) {
                     try {
+                        await vscode.commands.executeCommand('projectOverview.explorerView.focus');
                         WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
                     } catch (e) {
                         console.warn('[WelcomePanel] Wechsel abgefangen:', e);

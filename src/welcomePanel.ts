@@ -26,7 +26,7 @@ export class WelcomePanel {
                 : undefined;
 
             if (WelcomePanel.currentPanel && !WelcomePanel.currentPanel.isDisposed) {
-                WelcomePanel.currentPanel.panel.reveal(column || vscode.ViewColumn.One);
+                WelcomePanel.currentPanel.panel.reveal(column || vscode.ViewColumn.One, true);
                 WelcomePanel.currentPanel.update();
                 return WelcomePanel.currentPanel;
             }
@@ -34,7 +34,7 @@ export class WelcomePanel {
             const panel = vscode.window.createWebviewPanel(
                 WelcomePanel.viewType,
                 '🦖 Willkommen - Dino Dashboard',
-                column || vscode.ViewColumn.One,
+                { viewColumn: column || vscode.ViewColumn.One, preserveFocus: true },
                 {
                     enableScripts: true,
                     localResourceRoots: [

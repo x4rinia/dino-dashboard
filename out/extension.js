@@ -111,9 +111,13 @@ function activate(context) {
                 vscode.window.showInformationMessage(`🦖 Projekt „${projName}“ wurde automatisch in Antigravity geladen – du kannst direkt weiterarbeiten!`);
             }
             else {
-                // Wenn kein Projekt/Ordner geöffnet ist: Willkommensseite im Editor anzeigen!
+                // Wenn kein Projekt/Ordner geöffnet ist: Dino Dashboard im Explorer fokussieren & Willkommensseite im Editor anzeigen!
                 const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
                 if (isNoFolderOpened) {
+                    try {
+                        await vscode.commands.executeCommand('projectOverview.explorerView.focus');
+                    }
+                    catch { }
                     try {
                         welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
                     }
@@ -145,6 +149,7 @@ function activate(context) {
             const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
             if (isNoFolderOpened) {
                 try {
+                    await vscode.commands.executeCommand('projectOverview.explorerView.focus');
                     welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
                 }
                 catch (e) {
