@@ -87,6 +87,8 @@ function activate(context) {
         vscode.window.showInformationMessage('Projektordner im Explorer ausgeklappt.');
     }), vscode.commands.registerCommand('projectOverview.openSettings', async () => {
         await vscode.commands.executeCommand('workbench.action.openSettings', 'projectSummary');
+    }), vscode.commands.registerCommand('projectOverview.closeFolder', async () => {
+        await sidebarProvider.closeCurrentProject();
     }));
     // Beim Start: Dashboard anzeigen, Ordner ausklappen & ggf. Antigravity fokussieren
     const initialSettings = sidebarProvider.getSettings();

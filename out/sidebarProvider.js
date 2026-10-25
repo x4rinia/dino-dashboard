@@ -179,6 +179,11 @@ class SidebarProvider {
                     await vscode.commands.executeCommand('workbench.action.openSettings', 'projectSummary');
                     break;
                 }
+                case 'closeFolder':
+                case 'closeCurrentProject': {
+                    await this.closeCurrentProject();
+                    break;
+                }
                 case 'openFolderNewWindow': {
                     if (message.uri) {
                         const uri = vscode.Uri.parse(message.uri);
@@ -353,6 +358,17 @@ class SidebarProvider {
         }
         catch (err) {
             vscode.window.showErrorMessage(`Fehler beim Erstellen des neuen Projekts: ${err?.message || err}`);
+        }
+    }
+    /**
+     * Schließt das aktuell geöffnete Projekt (Ordner schließen), um zum Startzustand zurückzukehren.
+     */
+    async closeCurrentProject() {
+        try {
+            await vscode.commands.executeCommand('workbench.action.closeFolder');
+        }
+        catch (err) {
+            vscode.window.showErrorMessage(`Fehler beim Schließen des Projekts: ${err?.message || err}`);
         }
     }
     /**
@@ -1373,9 +1389,15 @@ class SidebarProvider {
       background: var(--vscode-button-hoverBackground);
     }
 
+    .btn-danger {
+      color: #f85149;
+      border-color: rgba(248, 81, 73, 0.4);
+    }
+
     .btn-danger:hover {
       background: rgba(248, 81, 73, 0.25);
-      color: #f85149;
+      color: #ff7b72;
+      border-color: #f85149;
     }
 
     /* Notizen & Formulare */
@@ -1613,6 +1635,7 @@ class SidebarProvider {
       const activeCount = state.projects.filter(p => p.isActiveWorkspace).length;
       const container = document.getElementById('projectsContainer');
       const toolbarEl = document.querySelector('.toolbar');
+      const headerBarEl = document.querySelector('.header-bar');
 
       // WENN SEITENLEISTEN-ANSICHT (Explorer): Nur das geöffnete Projekt mit Beschreibung & Notiz anzeigen!
       if (state.isExplorerView) {
@@ -1620,25 +1643,36 @@ class SidebarProvider {
         const activeProject = state.projects.find(p => p.isActiveWorkspace);
 
         if (!activeProject) {
-          document.getElementById('workspaceName').innerText = '🦖 DINO DASHBOARD';
-          document.getElementById('projectCount').innerText = totalCount === 0 ? 'Kein Projekt geöffnet' : \`\${totalCount} Projekte gespeichert\`;
+          // Im Explorer wenn kein Projekt geöffnet ist: Redundante header-bar ausblenden für ein kompaktes Layout ohne Scrollen!
+          if (headerBarEl) headerBarEl.style.display = 'none';
           container.innerHTML = \`
-            <div class="empty-state" style="padding: 24px 12px; margin-top: 6px;">
-              <div class="empty-icon" style="font-size: 36px;">🦖</div>
-              <p style="font-size: 13px; font-weight: 700; color: var(--vscode-foreground);">Kein Projekt geöffnet</p>
-              <p style="font-size: 11px; margin-top: 6px; color: var(--text-muted); line-height: 1.45;">
-                Öffne das Dino Dashboard, um deine gespeicherten Projekte zu sehen und direkt daran weiterzuarbeiten.
-              </p>
-              <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
-                <button class="btn btn-primary" style="justify-content: center; padding: 7px 12px; font-weight: 600;" onclick="openFullDashboard()" title="Dino Dashboard in der Seitenleiste öffnen">
-                  🦖 Dino Dashboard öffnen (\${totalCount} \${totalCount === 1 ? 'Projekt' : 'Projekte'}) ➔
+            <div class="empty-state" style="padding: 10px 8px; margin-top: 2px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 6px; text-align: left;">
+                  <span style="font-size: 20px;">🦖</span>
+                  <div>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--vscode-foreground); line-height: 1.2;">Kein Projekt geöffnet</div>
+                    <div style="font-size: 10.5px; color: var(--text-muted);\">\${totalCount} \${totalCount === 1 ? 'Projekt' : 'Projekte'} gespeichert</div>
+                  </div>
+                </div>
+                <div class="mascot-badge" onclick="showDinoDialogue(null)" title="Dino-Wächter um Rat fragen" style="padding: 2px 7px; font-size: 10.5px; cursor: pointer;">
+                  <span class="mascot-icon">🦖</span>
+                  <span>Dino-Wächter</span>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <button class="btn btn-primary" style="justify-content: center; padding: 7px 10px; font-weight: 600; font-size: 11.5px;" onclick="openFullDashboard()" title="Dino Dashboard in der Seitenleiste öffnen">
+                  🦖 Dino Dashboard öffnen (\${totalCount}) ➔
                 </button>
-                <button class="btn" style="justify-content: center; padding: 6px 10px;" onclick="createNewProject()" title="Ein ganz neues Projekt anlegen">
-                  ✨ Neues Projekt anlegen...
-                </button>
-                <button class="btn" style="justify-content: center; padding: 6px 10px;" onclick="addFolder()" title="Einen Projektordner öffnen">
-                  📁 Projektordner öffnen...
-                </button>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn" style="flex: 1; justify-content: center; padding: 5px 6px; font-size: 11px;" onclick="createNewProject()" title="Ein ganz neues Projekt anlegen: Ordnername und Speicherort wählen, direkt öffnen">
+                    ✨ Neues Projekt
+                  </button>
+                  <button class="btn" style="flex: 1; justify-content: center; padding: 5px 6px; font-size: 11px;" onclick="addFolder()" title="Einen bestehenden Projektordner öffnen">
+                    📁 Ordner öffnen
+                  </button>
+                </div>
               </div>
             </div>
           \`;
@@ -1646,6 +1680,7 @@ class SidebarProvider {
         }
 
         // Aktives geöffnetes Projekt in der Seitenleiste anzeigen
+        if (headerBarEl) headerBarEl.style.display = 'flex';
         document.getElementById('workspaceName').innerText = '🦖 ' + activeProject.name;
         document.getElementById('projectCount').innerText = 'Geöffnetes Projekt im Workspace';
 
@@ -1692,8 +1727,11 @@ class SidebarProvider {
                     \${escapeHtml(activeProject.folderPath)}
                   </div>
                 </div>
-                <div class="badges-wrap">
+                <div class="badges-wrap" style="display: flex; gap: 4px; align-items: center;">
                   <span class="health-pill active-pill">🟢 Aktiv</span>
+                  <button class="btn btn-danger" style="padding: 2px 7px; font-size: 10px;" onclick="closeFolder()" title="Geöffneten Ordner schließen und zum Start zurückkehren">
+                    ✕ Schließen
+                  </button>
                 </div>
               </div>
 
@@ -1790,7 +1828,7 @@ class SidebarProvider {
                 </div>
               </div>
 
-              <div class="action-row">
+              <div class="action-row" style="flex-wrap: wrap; gap: 6px;">
                 <button class="btn btn-primary" style="flex: 1; justify-content: center; font-weight: 600;" onclick="focusAntigravityPanel()" title="Antigravity-Chat fokussieren">
                   💬 Antigravity-Chat
                 </button>
@@ -1798,10 +1836,13 @@ class SidebarProvider {
                   ⚡ Ausklappen
                 </button>
                 \${activeProject.hasReadme ? \`
-                  <button class="btn" onclick="openReadme('\${escapeHtml(activeProject.readmeUri || '')}')">
+                  <button class="btn" onclick="openReadme('\\\${escapeHtml(activeProject.readmeUri || '')}')">
                     📖 README
                   </button>
                 \` : ''}
+                <button class="btn btn-danger" onclick="closeFolder()" title="Geöffneten Ordner schließen und zum Start zurückkehren">
+                  ❌ Projekt schließen
+                </button>
               </div>
             </div>
           </div>
@@ -1817,6 +1858,7 @@ class SidebarProvider {
       }
 
       // STANDARD VOLL-DASHBOARD (Aktivitätsleiste / Dino-Icon)
+      if (headerBarEl) headerBarEl.style.display = 'flex';
       if (toolbarEl) toolbarEl.style.display = 'flex';
 
       const favFilterBtn = document.getElementById('filterFavBtn');
@@ -1956,6 +1998,9 @@ class SidebarProvider {
                       \${proj.isActiveWorkspace ? \`
                         <button class="tbl-btn tbl-btn-active" onclick="focusAntigravityPanel()" title="Projekt ist aktiv! Zum Antigravity-Chat wechseln">
                           🦖 Aktiv
+                        </button>
+                        <button class="tbl-btn tbl-btn-delete" onclick="event.stopPropagation(); closeFolder();" title="Projekt bzw. Ordner schließen (zurück zum Start)">
+                          ✕ Schließen
                         </button>
                       \` : \`
                         <button class="tbl-btn tbl-btn-launch" onclick="openInAntigravity('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Projekt in Antigravity laden & weiterarbeiten">
@@ -2133,9 +2178,14 @@ class SidebarProvider {
               <!-- Primärer Antigravity-Ladebutton -->
               <div class="antigravity-launch-row">
                 \${proj.isActiveWorkspace ? \`
-                  <button class="btn-launch btn-launch-active" onclick="focusAntigravityPanel()" title="Projekt ist geladen! Klicke, um direkt zum Antigravity-Chat zu wechseln">
-                    🦖 Aktiv in Antigravity – Weiterarbeiten
-                  </button>
+                  <div style="display: flex; gap: 6px;">
+                    <button class="btn-launch btn-launch-active" style="flex: 1;" onclick="focusAntigravityPanel()" title="Projekt ist geladen! Klicke, um direkt zum Antigravity-Chat zu wechseln">
+                      🦖 Aktiv in Antigravity – Weiterarbeiten
+                    </button>
+                    <button class="btn btn-danger" style="padding: 6px 12px; font-weight: 600;" onclick="closeFolder()" title="Projekt bzw. Ordner schließen (zurück zum Start)">
+                      ✕ Schließen
+                    </button>
+                  </div>
                 \` : \`
                   <button class="btn-launch" onclick="openInAntigravity('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Lädt dieses Projekt sofort in Antigravity, ohne dass du den Ordner manuell öffnen musst">
                     🚀 Projekt in Antigravity laden & arbeiten
@@ -2267,6 +2317,10 @@ class SidebarProvider {
     }
 
     // Aktionen an Extension senden
+    function closeFolder() {
+      vscode.postMessage({ command: 'closeFolder' });
+    }
+
     function openFullDashboard() {
       vscode.postMessage({ command: 'openFullDashboard' });
     }

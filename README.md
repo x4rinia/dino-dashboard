@@ -42,11 +42,14 @@
 - Passe Projektnamen mit Klick auf das Stift-Symbol an oder setze sie auf den Ordnernamen zurueck.
 - Das Dashboard analysiert automatisch den Inhalt (README, `package.json`, Python, HTML etc.) und generiert deutsche Projektbeschreibungen.
 
+### 8. Projekt schliessen (Ordner schliessen)
+- Klicke bei einem aktiven Projekt auf **"Projekt schliessen"** oder auf das Schliessen-Symbol in der Titelleiste (`x`), um den aktuellen Projektordner sofort zu schliessen und direkt zum Startzustand zurueckzukehren.
+
 ---
 
 ## Installation der Extension (.vsix)
 
-1. Lade die Datei `dino-dashboard-1.4.6.vsix` herunter (aus dem Repository oder den [GitHub Releases](https://github.com/X4rinia/dino-dashboard/releases)).
+1. Lade die Datei `dino-dashboard-1.4.7.vsix` herunter (aus dem Repository oder den [GitHub Releases](https://github.com/X4rinia/dino-dashboard/releases)).
 2. Oeffne Antigravity / VS Code / Cursor.
 3. Gehe in das **Erweiterungen-Menue** (`Strg + Umschalt + X`).
 4. Klicke oben rechts auf die drei Punkte (`...`) und waehle **"Aus VSIX installieren..."** (*"Install from VSIX..."*).
@@ -54,7 +57,7 @@
 
 Alternativ per Terminal:
 ```bash
-code --install-extension dino-dashboard-1.4.6.vsix
+code --install-extension dino-dashboard-1.4.7.vsix
 ```
 
 ---
@@ -68,23 +71,6 @@ Aufbau des Quellcodes:
 - `src/sidebarProvider.ts` - Deutsche Benutzeroberflaeche des Dino Dashboards
 - `src/autoExpander.ts` - Automatisches Ausklappen wichtiger Projektordner im Explorer
 - `src/types.ts` - TypeScript-Datentypen
-
-Kompilieren:
-```bash
-npm run compile
-```
-
----
-
-## Entwicklung & Kompilierung
-
-Aufbau des Quellcodes:
-
-- `src/extension.ts` – Einstiegspunkt, Befehle und automatischer Antigravity-Fokus
-- `src/projectScanner.ts` – Persistente Projekt-Registry, automatische Beschreibungserkennung & Antigravity-Synchronisation
-- `src/sidebarProvider.ts` – Deutsche Benutzeroberfläche des Dino Dashboards
-- `src/autoExpander.ts` – Automatisches Ausklappen wichtiger Projektordner im Explorer
-- `src/types.ts` – TypeScript-Datentypen
 
 Kompilieren:
 ```bash

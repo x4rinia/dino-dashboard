@@ -65,6 +65,9 @@ export function activate(context: vscode.ExtensionContext): void {
         }),
         vscode.commands.registerCommand('projectOverview.openSettings', async () => {
             await vscode.commands.executeCommand('workbench.action.openSettings', 'projectSummary');
+        }),
+        vscode.commands.registerCommand('projectOverview.closeFolder', async () => {
+            await sidebarProvider.closeCurrentProject();
         })
     );
 
