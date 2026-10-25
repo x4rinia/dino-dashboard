@@ -2,7 +2,7 @@
 	"name": "dino-dashboard",
 	"displayName": "Dino Dashboard (Deutsch)",
 	"description": "Projekt-Manager & Dashboard auf Deutsch: Favoriten mit Stern markieren, Ordner hinzufügen, Projektnamen & automatische Beschreibungen verwalten und Projekte direkt mit 1 Klick in Antigravity laden.",
-	"version": "1.4.2",
+	"version": "1.4.3",
 	"icon": "resources/icon.png",
 	"publisher": "x4rinia",
 	"repository": {

@@ -98,6 +98,18 @@ class SidebarProvider {
                     }
                     break;
                 }
+                case 'openFullDashboard': {
+                    try {
+                        await vscode.commands.executeCommand('projectOverview.sidebarView.focus');
+                    }
+                    catch {
+                        try {
+                            await vscode.commands.executeCommand('workbench.view.extension.project-overview-container');
+                        }
+                        catch { }
+                    }
+                    break;
+                }
                 case 'toggleFavorite': {
                     if (message.uri) {
                         const fsPath = vscode.Uri.parse(message.uri).fsPath;
@@ -335,13 +347,16 @@ class SidebarProvider {
         }
         const settings = this.getSettings();
         const projects = await this.scanner.scanAll(settings);
-        const payload = {
-            type: 'stateUpdate',
-            projects,
-            settings,
-            workspaceName: vscode.workspace.name || 'Workspace'
-        };
+        const workspaceName = vscode.workspace.name || 'Workspace';
         for (const view of this._views) {
+            const isExplorer = view.viewType === SidebarProvider.explorerViewType;
+            const payload = {
+                type: 'stateUpdate',
+                projects,
+                settings,
+                workspaceName,
+                isExplorerView: isExplorer
+            };
             view.webview.postMessage(payload);
         }
     }
@@ -1296,6 +1311,7 @@ class SidebarProvider {
       searchQuery: '',
       filterFavorites: false,
       viewMode: 'table',
+      isExplorerView: false,
       expandedDetailsFor: null,
       editingNameFor: null,
       editingDescFor: null,
@@ -1309,6 +1325,7 @@ class SidebarProvider {
         state.projects = message.projects || [];
         state.settings = message.settings || state.settings;
         state.workspaceName = message.workspaceName || 'Workspace';
+        state.isExplorerView = !!message.isExplorerView;
         render();
       }
     });
@@ -1353,6 +1370,190 @@ class SidebarProvider {
         mascotBadgeEl.style.display = 'none';
       }
 
+      const totalCount = state.projects.length;
+      const favCount = state.projects.filter(p => p.isFavorite).length;
+      const activeCount = state.projects.filter(p => p.isActiveWorkspace).length;
+      const container = document.getElementById('projectsContainer');
+      const toolbarEl = document.querySelector('.toolbar');
+
+      // WENN SEITENLEISTEN-ANSICHT (Explorer): Nur das geöffnete Projekt mit Beschreibung & Notiz anzeigen!
+      if (state.isExplorerView) {
+        if (toolbarEl) toolbarEl.style.display = 'none';
+        const activeProject = state.projects.find(p => p.isActiveWorkspace);
+
+        if (!activeProject) {
+          document.getElementById('workspaceName').innerText = '🦖 DINO DASHBOARD';
+          document.getElementById('projectCount').innerText = totalCount === 0 ? 'Kein Projekt geöffnet' : \`\${totalCount} Projekte gespeichert\`;
+          container.innerHTML = \`
+            <div class="empty-state" style="padding: 24px 12px; margin-top: 6px;">
+              <div class="empty-icon" style="font-size: 36px;">🦖</div>
+              <p style="font-size: 13px; font-weight: 700; color: var(--vscode-foreground);">Kein Projekt geöffnet</p>
+              <p style="font-size: 11px; margin-top: 6px; color: var(--text-muted); line-height: 1.45;">
+                Öffne das Dino Dashboard, um deine gespeicherten Projekte zu sehen und direkt daran weiterzuarbeiten.
+              </p>
+              <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+                <button class="btn btn-primary" style="justify-content: center; padding: 7px 12px; font-weight: 600;" onclick="openFullDashboard()" title="Dino Dashboard in der Seitenleiste öffnen">
+                  🦖 Dino Dashboard öffnen (\${totalCount} \${totalCount === 1 ? 'Projekt' : 'Projekte'}) ➔
+                </button>
+                <button class="btn" style="justify-content: center; padding: 6px 10px;" onclick="addFolder()" title="Einen Projektordner öffnen">
+                  📁 Projektordner öffnen...
+                </button>
+              </div>
+            </div>
+          \`;
+          return;
+        }
+
+        // Aktives geöffnetes Projekt in der Seitenleiste anzeigen
+        document.getElementById('workspaceName').innerText = '🦖 ' + activeProject.name;
+        document.getElementById('projectCount').innerText = 'Geöffnetes Projekt im Workspace';
+
+        const isEditingDesc = state.editingDescFor === activeProject.id;
+        const isEditingNotes = state.editingNotesFor === activeProject.id;
+        const isEditingName = state.editingNameFor === activeProject.id;
+        const isAddingTag = state.addingTagFor === activeProject.id;
+
+        const techTagsHtml = (activeProject.techStack || []).map(t => \`<span class="tag">\${escapeHtml(t)}</span>\`).join('');
+        const customTagsHtml = (activeProject.customTags || []).map(t => \`
+          <span class="tag custom-tag">
+            \${escapeHtml(t)}
+            <span class="tag-remove" title="Tag entfernen" onclick="removeTag('\${escapeHtml(activeProject.id)}', '\${escapeHtml(t)}')">×</span>
+          </span>
+        \`).join('');
+
+        container.innerHTML = \`
+          <div class="project-card active-card" style="margin-top: 4px;">
+            <div class="card-header">
+              <div class="card-header-top">
+                <div class="card-title-area">
+                  \${isEditingName ? \`
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <input type="text" class="inline-input" id="nameInput_\${escapeHtml(activeProject.id)}" value="\${escapeHtml(activeProject.name)}" onkeydown="handleNameKey(event, '\${escapeHtml(activeProject.id)}')">
+                      <div style="display: flex; gap: 4px;">
+                        <button class="btn btn-primary" onclick="saveName('\${escapeHtml(activeProject.id)}')">💾 Speichern</button>
+                        <button class="btn" onclick="resetName('\${escapeHtml(activeProject.id)}')">Ordnername</button>
+                        <button class="btn" onclick="toggleEditName('\${escapeHtml(activeProject.id)}')">✕</button>
+                      </div>
+                    </div>
+                  \` : \`
+                    <div class="project-name-row">
+                      <button class="cell-fav-btn \${activeProject.isFavorite ? 'is-fav' : ''}" onclick="toggleFavorite('\${escapeHtml(activeProject.folderUri)}', '\${escapeHtml(activeProject.name)}')" title="\${activeProject.isFavorite ? 'Aus Favoriten entfernen' : 'Als Favorit mit Stern markieren'}">
+                        \${activeProject.isFavorite ? '⭐' : '☆'}
+                      </button>
+                      <div class="project-name">
+                        <span>🦖</span>
+                        <span>\${escapeHtml(activeProject.name)}</span>
+                      </div>
+                      <button class="icon-btn" onclick="toggleEditName('\${escapeHtml(activeProject.id)}')" title="Name ändern">✏️</button>
+                    </div>
+                  \`}
+                  <div class="project-path" title="\${escapeHtml(activeProject.folderPath)}">
+                    \${escapeHtml(activeProject.folderPath)}
+                  </div>
+                </div>
+                <div class="badges-wrap">
+                  <span class="health-pill active-pill">🟢 Aktiv</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <!-- Beschreibung -->
+              <div class="desc-box">
+                <div class="desc-header">
+                  <span>\${activeProject.customDescription ? '📝 Beschreibung (Angepasst)' : '🤖 Beschreibung (Automatisch)'}</span>
+                  <button class="icon-btn" onclick="toggleEditDesc('\${escapeHtml(activeProject.id)}')">
+                    \${isEditingDesc ? 'Schließen' : '✏️ Ändern'}
+                  </button>
+                </div>
+                \${isEditingDesc ? \`
+                  <div>
+                    <textarea class="notes-textarea" id="descInput_\${escapeHtml(activeProject.id)}">\${escapeHtml(activeProject.description)}</textarea>
+                    <div style="display: flex; gap: 4px; justify-content: flex-end; margin-top: 4px;">
+                      <button class="btn" onclick="resetDescription('\${escapeHtml(activeProject.id)}')">🔄 Auto-Erkennung</button>
+                      <button class="btn btn-primary" onclick="saveDescription('\${escapeHtml(activeProject.id)}')">💾 Speichern</button>
+                    </div>
+                  </div>
+                \` : \`
+                  <div class="project-desc">\${escapeHtml(activeProject.description)}</div>
+                \`}
+              </div>
+
+              <!-- Projekt-Info & Notizen -->
+              <div style="background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.28); border-radius: 5px; padding: 7px 9px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="font-size: 10px; font-weight: 700; color: #e3b341; text-transform: uppercase; letter-spacing: 0.3px;">📌 Notiz & Info</span>
+                  <button class="icon-btn" onclick="toggleEditNotes('\${escapeHtml(activeProject.id)}')">
+                    \${isEditingNotes ? 'Schließen' : (activeProject.customNotes ? '✏️ Ändern' : '+ Info eintragen')}
+                  </button>
+                </div>
+                \${isEditingNotes ? \`
+                  <div class="note-inline-edit">
+                    <input type="text" class="inline-input" id="quickNoteInput_\${escapeHtml(activeProject.id)}" value="\${escapeHtml(activeProject.customNotes || '')}" placeholder="Info eintragen (z. B. 'ist in arbeit', 'button noch verbuggt')..." onkeydown="handleNoteKey(event, '\${escapeHtml(activeProject.id)}')">
+                    <div style="display: flex; gap: 4px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
+                      <button class="tbl-btn tbl-btn-launch" onclick="saveQuickNote('\${escapeHtml(activeProject.id)}')">💾 Speichern</button>
+                      <button class="tbl-btn" onclick="toggleEditNotes('\${escapeHtml(activeProject.id)}')">✕</button>
+                      <span style="font-size: 9.5px; color: var(--text-muted); margin-left: 2px;">Schnellwahl:</span>
+                      <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(activeProject.id)}', '⚡ Ist in Arbeit')">⚡ In Arbeit</span>
+                      <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(activeProject.id)}', '🐛 Button noch verbuggt')">🐛 Bug</span>
+                      <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(activeProject.id)}', '✨ Neues Feature geplant')">✨ Feature</span>
+                      <span class="quick-chip" onclick="setQuickNote('\${escapeHtml(activeProject.id)}', '✅ Fertiggestellt')">✅ Fertig</span>
+                    </div>
+                  </div>
+                \` : \`
+                  <div style="font-size: 11.5px; color: var(--vscode-foreground);">
+                    \${activeProject.customNotes ? ('📌 ' + escapeHtml(activeProject.customNotes)) : '<span style="color: var(--text-muted); font-style: italic;">Keine Info/Notiz. Klicke auf „+ Info eintragen“, um Status wie „ist in arbeit“ oder „button noch verbuggt“ hinzuzufügen.</span>'}
+                  </div>
+                \`}
+              </div>
+
+              <!-- Tech-Stack -->
+              <div class="stack-tags">
+                \${techTagsHtml}
+                \${customTagsHtml}
+                <button class="btn" style="padding: 1px 6px; font-size: 10px;" onclick="toggleAddTag('\${escapeHtml(activeProject.id)}')">+ Tag</button>
+              </div>
+
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Dateien</span>
+                  <span class="stat-value">\${activeProject.stats.fileCount.toLocaleString('de-DE')}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Git-Branch</span>
+                  <span class="stat-value">\${escapeHtml(activeProject.stats.gitBranch ? \`⎇ \${activeProject.stats.gitBranch}\` : 'Kein Git')}</span>
+                </div>
+              </div>
+
+              <div class="action-row">
+                <button class="btn btn-primary" style="flex: 1; justify-content: center; font-weight: 600;" onclick="focusAntigravityPanel()" title="Antigravity-Chat fokussieren">
+                  💬 Antigravity-Chat
+                </button>
+                <button class="btn" onclick="autoExpand()" title="Unterordner im Explorer ausklappen">
+                  ⚡ Ausklappen
+                </button>
+                \${activeProject.hasReadme ? \`
+                  <button class="btn" onclick="openReadme('\${escapeHtml(activeProject.readmeUri || '')}')">
+                    📖 README
+                  </button>
+                \` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Verlinkung zum vollständigen Dashboard -->
+          <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--card-border);">
+            <button class="btn" style="width: 100%; justify-content: center; padding: 7px 10px; font-weight: 600;" onclick="openFullDashboard()" title="Öffnet das vollständige Dino Dashboard mit allen Projekten">
+              🦖 Alle \${totalCount} Projekte im Dino Dashboard öffnen ➔
+            </button>
+          </div>
+        \`;
+        return;
+      }
+
+      // STANDARD VOLL-DASHBOARD (Aktivitätsleiste / Dino-Icon)
+      if (toolbarEl) toolbarEl.style.display = 'flex';
+
       const favFilterBtn = document.getElementById('filterFavBtn');
       if (favFilterBtn) {
         if (state.filterFavorites) {
@@ -1373,10 +1574,6 @@ class SidebarProvider {
           btnCards.classList.add('active');
         }
       }
-
-      const totalCount = state.projects.length;
-      const favCount = state.projects.filter(p => p.isFavorite).length;
-      const activeCount = state.projects.filter(p => p.isActiveWorkspace).length;
 
       const filtered = state.projects.filter(proj => {
         if (state.filterFavorites && !proj.isFavorite) return false;
@@ -1399,7 +1596,6 @@ class SidebarProvider {
           ? 'Keine Projekte gespeichert'
           : \`\${totalCount} \${totalCount === 1 ? 'Projekt' : 'Projekte'} (\${activeCount} aktiv\${favLabel})\`;
 
-      const container = document.getElementById('projectsContainer');
       if (filtered.length === 0) {
         container.innerHTML = \`
           <div class="empty-state">
@@ -1508,8 +1704,8 @@ class SidebarProvider {
                           🚀 Öffnen
                         </button>
                       \`}
-                      <button class="tbl-btn" onclick="toggleRowDetails('\${escapeHtml(proj.id)}')" title="\${isExpanded ? 'Details verbergen' : 'Details & Beschreibung ausklappen'}">
-                        \${isExpanded ? '▲' : 'ℹ️'}
+                      <button class="tbl-btn" onclick="event.stopPropagation(); toggleEditNotes('\${escapeHtml(proj.id)}')" title="Info / Notiz zu diesem Projekt eintragen (z. B. 'ist in arbeit', 'button noch verbuggt')">
+                        ℹ️
                       </button>
                       <button class="tbl-btn tbl-btn-delete" onclick="removeProject('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Projekt aus dem Dino Dashboard entfernen">
                         🗑️
@@ -1769,6 +1965,10 @@ class SidebarProvider {
     }
 
     // Aktionen an Extension senden
+    function openFullDashboard() {
+      vscode.postMessage({ command: 'openFullDashboard' });
+    }
+
     function setViewMode(mode) {
       state.viewMode = mode;
       render();
