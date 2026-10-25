@@ -2,7 +2,7 @@
 	"name": "dino-dashboard",
 	"displayName": "Dino Dashboard (Deutsch)",
 	"description": "Projekt-Manager & Dashboard auf Deutsch: Favoriten mit Stern markieren, Ordner hinzufügen, Projektnamen & automatische Beschreibungen verwalten und Projekte direkt mit 1 Klick in Antigravity laden.",
-	"version": "1.4.7",
+	"version": "1.4.8",
 	"icon": "resources/icon.png",
 	"publisher": "x4rinia",
 	"repository": {
@@ -100,39 +100,49 @@
 				"command": "projectOverview.closeFolder",
 				"title": "Dino Dashboard: Projekt schließen (Ordner schließen)",
 				"icon": "$(close)"
+			},
+			{
+				"command": "projectOverview.showWelcome",
+				"title": "Dino Dashboard: Willkommensseite anzeigen",
+				"icon": "$(home)"
 			}
 		],
 		"menus": {
 			"view/title": [
 				{
-					"command": "projectOverview.createNewProject",
+					"command": "projectOverview.showWelcome",
 					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
 					"group": "navigation@0"
 				},
 				{
-					"command": "projectOverview.addFolder",
+					"command": "projectOverview.createNewProject",
 					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
 					"group": "navigation@1"
 				},
 				{
-					"command": "projectOverview.refresh",
+					"command": "projectOverview.addFolder",
 					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
 					"group": "navigation@2"
 				},
 				{
-					"command": "projectOverview.autoExpand",
+					"command": "projectOverview.refresh",
 					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
 					"group": "navigation@3"
 				},
 				{
-					"command": "projectOverview.openSettings",
+					"command": "projectOverview.autoExpand",
 					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
 					"group": "navigation@4"
 				},
 				{
+					"command": "projectOverview.openSettings",
+					"when": "view == projectOverview.sidebarView || view == projectOverview.explorerView",
+					"group": "navigation@5"
+				},
+				{
 					"command": "projectOverview.closeFolder",
 					"when": "workbenchState != 'empty' && (view == projectOverview.sidebarView || view == projectOverview.explorerView)",
-					"group": "navigation@5"
+					"group": "navigation@6"
 				}
 			]
 		},

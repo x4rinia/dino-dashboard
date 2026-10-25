@@ -40,6 +40,7 @@ const path = __importStar(require("path"));
 const projectScanner_1 = require("./projectScanner");
 const autoExpander_1 = require("./autoExpander");
 const sidebarProvider_1 = require("./sidebarProvider");
+const welcomePanel_1 = require("./welcomePanel");
 function activate(context) {
     const scanner = new projectScanner_1.ProjectScanner(context);
     const autoExpander = new autoExpander_1.AutoExpander();
@@ -89,6 +90,8 @@ function activate(context) {
         await vscode.commands.executeCommand('workbench.action.openSettings', 'projectSummary');
     }), vscode.commands.registerCommand('projectOverview.closeFolder', async () => {
         await sidebarProvider.closeCurrentProject();
+    }), vscode.commands.registerCommand('projectOverview.showWelcome', () => {
+        welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
     }));
     // Beim Start: Dashboard anzeigen, Ordner ausklappen & ggf. Antigravity fokussieren
     const initialSettings = sidebarProvider.getSettings();
@@ -112,6 +115,13 @@ function activate(context) {
             const projName = path.basename(justLoadedPath);
             vscode.window.showInformationMessage(`🦖 Projekt „${projName}“ wurde automatisch in Antigravity geladen – du kannst direkt weiterarbeiten!`);
         }
+        else {
+            // Wenn kein Projekt/Ordner geöffnet ist: Willkommensseite im Editor anzeigen!
+            const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+            if (isNoFolderOpened) {
+                welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
+            }
+        }
     }, 600);
     // Workspace-Ordner-Änderungen überwachen
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
@@ -120,6 +130,13 @@ function activate(context) {
         await sidebarProvider.updateDashboard();
         if (settings.autoExpandExplorer) {
             await autoExpander.expandWorkspace(settings);
+        }
+        const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+        if (isNoFolderOpened) {
+            welcomePanel_1.WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
+        }
+        else {
+            welcomePanel_1.WelcomePanel.currentPanel?.dispose();
         }
     }));
     // Einstellungen überwachen

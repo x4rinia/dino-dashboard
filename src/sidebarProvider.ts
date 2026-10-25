@@ -688,8 +688,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     .table-main-row {
       display: flex;
       align-items: center;
-      padding: 8px 10px;
-      gap: 8px;
+      padding: 6px 8px;
+      gap: 6px;
       cursor: pointer;
       user-select: none;
       position: relative;
@@ -748,9 +748,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     .cell-title-line {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       flex-wrap: nowrap;
       overflow: hidden;
+      min-width: 0;
     }
 
     .cell-title-text {
@@ -760,6 +761,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      min-width: 30px;
+      flex: 1;
     }
 
     .cell-sub-line {
@@ -768,6 +771,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+      min-width: 0;
+    }
+
+    .cell-path-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex: 1;
     }
 
     .mini-pill {
@@ -1958,10 +1974,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                       \${proj.isFavorite ? '⭐' : '☆'}
                     </button>
 
-                    <!-- Status Dino (Klick öffnet Dino-Wächter Dialog für dieses Projekt!) -->
-                    <div class="cell-icon-wrap" onclick="event.stopPropagation(); showDinoDialogueById('\${escapeHtml(proj.id)}')" title="Dino-Wächter nach diesem Projekt fragen">
-                      \${proj.isActiveWorkspace ? '🦖' : '📦'}
-                    </div>
+                    <!-- Paket-Icon entfernt für volle Breite des Projektnamens -->
 
                     <!-- Name & Pfad & Status & Notizen -->
                     <div class="cell-content">
@@ -1974,19 +1987,18 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         </div>
                       \` : \`
                         <div class="cell-title-line">
-                          <span class="cell-title-text" title="Klicken, um Details auszuklappen / einzuklappen">\${escapeHtml(proj.name)}</span>
+                          \${proj.isActiveWorkspace ? '<span style="font-size: 13px; line-height: 1;">🦖</span>' : ''}
+                          <span class="cell-title-text" title="\${escapeHtml(proj.name)} (Klicken für Details)">\${escapeHtml(proj.name)}</span>
                           <button class="icon-btn" onclick="event.stopPropagation(); toggleEditName('\${escapeHtml(proj.id)}')" title="Name umbenennen">✏️</button>
-                          \${proj.isFavorite ? '<span class="mini-pill fav-pill">⭐</span>' : ''}
                           \${proj.isActiveWorkspace ? '<span class="mini-pill active-pill">🟢 Aktiv</span>' : ''}
-
-                          <!-- Status-Button: Wird automatisch angezeigt, Klick darauf ändert den Status! -->
-                          <button class="status-hint-pill \${getStatusHintClass(proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit' : '🟢 Bereit'))}" onclick="event.stopPropagation(); toggleStatusPicker('\${escapeHtml(proj.id)}')" title="Status ändern (Klicken für Auswahl: In Arbeit, Abgeschlossen...)">
-                            \${escapeHtml(proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit' : '🟢 Bereit'))} ▾
-                          </button>
                         </div>
 
-                        <div class="cell-sub-line" title="\${escapeHtml(proj.folderPath)}">
-                          \${escapeHtml(proj.folderPath)}\${folderDiffHint}
+                        <div class="cell-sub-line">
+                          <!-- Status-Button: In Zeile 2 neben Pfad, damit Projektname oben volle Breite hat! -->
+                          <button class="status-hint-pill \${getStatusHintClass(proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit' : '🟢 Bereit'))}" onclick="event.stopPropagation(); toggleStatusPicker('\${escapeHtml(proj.id)}')" title="Status ändern (Klicken für Auswahl)">
+                            \${escapeHtml(proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit' : '🟢 Bereit'))} ▾
+                          </button>
+                          <span class="cell-path-text" title="\${escapeHtml(proj.folderPath)}">\${escapeHtml(proj.folderPath)}\${folderDiffHint}</span>
                         </div>
                       \`}
 
@@ -2137,7 +2149,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         \${proj.isFavorite ? '⭐' : '☆'}
                       </button>
                       <div class="project-name" onclick="showDinoDialogueById('\${escapeHtml(proj.id)}')" style="cursor: pointer;" title="Dino-Wächter nach diesem Projekt fragen">
-                        <span>\${proj.isActiveWorkspace ? '🦖' : '📦'}</span>
+                        \${proj.isActiveWorkspace ? '<span>🦖</span>' : ''}
                         <span>\${escapeHtml(proj.name)}</span>
                       </div>
                       <button class="icon-btn" title="Projektnamen ändern (aktuell: \${escapeHtml(proj.name)})" onclick="toggleEditName('\${escapeHtml(proj.id)}')">

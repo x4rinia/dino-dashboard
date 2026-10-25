@@ -45,11 +45,15 @@
 ### 8. Projekt schliessen (Ordner schliessen)
 - Klicke bei einem aktiven Projekt auf **"Projekt schliessen"** oder auf das Schliessen-Symbol in der Titelleiste (`x`), um den aktuellen Projektordner sofort zu schliessen und direkt zum Startzustand zurueckzukehren.
 
+### 9. Willkommensseite im Editor
+- Wenn kein Projekt geoeffnet ist (z. B. nach dem Start oder nach dem Schliessen eines Ordners), begruesst dich eine freundliche **Dino-Willkommensseite direkt im Editor-Bereich**.
+- Du siehst eine Schnelluebersicht deiner gespeicherten Projekte, Favoriten und Direkt-Aktionen zum Anlegen und Oeffnen.
+
 ---
 
 ## Installation der Extension (.vsix)
 
-1. Lade die Datei `dino-dashboard-1.4.7.vsix` herunter (aus dem Repository oder den [GitHub Releases](https://github.com/X4rinia/dino-dashboard/releases)).
+1. Lade die Datei `dino-dashboard-1.4.8.vsix` herunter (aus dem Repository oder den [GitHub Releases](https://github.com/X4rinia/dino-dashboard/releases)).
 2. Oeffne Antigravity / VS Code / Cursor.
 3. Gehe in das **Erweiterungen-Menue** (`Strg + Umschalt + X`).
 4. Klicke oben rechts auf die drei Punkte (`...`) und waehle **"Aus VSIX installieren..."** (*"Install from VSIX..."*).
@@ -57,7 +61,7 @@
 
 Alternativ per Terminal:
 ```bash
-code --install-extension dino-dashboard-1.4.7.vsix
+code --install-extension dino-dashboard-1.4.8.vsix
 ```
 
 ---
@@ -67,6 +71,7 @@ code --install-extension dino-dashboard-1.4.7.vsix
 Aufbau des Quellcodes:
 
 - `src/extension.ts` - Einstiegspunkt, Befehle und automatischer Antigravity-Fokus
+- `src/welcomePanel.ts` - Dino-Willkommensseite im Editor
 - `src/projectScanner.ts` - Persistente Projekt-Registry, automatische Beschreibungserkennung & Antigravity-Synchronisation
 - `src/sidebarProvider.ts` - Deutsche Benutzeroberflaeche des Dino Dashboards
 - `src/autoExpander.ts` - Automatisches Ausklappen wichtiger Projektordner im Explorer

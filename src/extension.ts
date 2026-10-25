@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ProjectScanner } from './projectScanner';
 import { AutoExpander } from './autoExpander';
 import { SidebarProvider } from './sidebarProvider';
+import { WelcomePanel } from './welcomePanel';
 
 export function activate(context: vscode.ExtensionContext): void {
     const scanner = new ProjectScanner(context);
@@ -68,6 +69,9 @@ export function activate(context: vscode.ExtensionContext): void {
         }),
         vscode.commands.registerCommand('projectOverview.closeFolder', async () => {
             await sidebarProvider.closeCurrentProject();
+        }),
+        vscode.commands.registerCommand('projectOverview.showWelcome', () => {
+            WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
         })
     );
 
@@ -94,6 +98,12 @@ export function activate(context: vscode.ExtensionContext): void {
             vscode.window.showInformationMessage(
                 `🦖 Projekt „${projName}“ wurde automatisch in Antigravity geladen – du kannst direkt weiterarbeiten!`
             );
+        } else {
+            // Wenn kein Projekt/Ordner geöffnet ist: Willkommensseite im Editor anzeigen!
+            const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+            if (isNoFolderOpened) {
+                WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
+            }
         }
     }, 600);
 
@@ -105,6 +115,13 @@ export function activate(context: vscode.ExtensionContext): void {
             await sidebarProvider.updateDashboard();
             if (settings.autoExpandExplorer) {
                 await autoExpander.expandWorkspace(settings);
+            }
+
+            const isNoFolderOpened = !vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0;
+            if (isNoFolderOpened) {
+                WelcomePanel.createOrShow(context.extensionUri, scanner, sidebarProvider);
+            } else {
+                WelcomePanel.currentPanel?.dispose();
             }
         })
     );
