@@ -1539,6 +1539,27 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     </div>
   </div>
 
+  <!-- Projekt-Notiz Fenster (Modal bei Klick auf i-Button) -->
+  <div id="projectNoteBackdrop" class="dino-dialogue-backdrop" style="display: none;" onclick="closeNoteModal(event)">
+    <div class="dino-dialogue-window" onclick="event.stopPropagation()" style="max-width: 380px;">
+      <div class="dino-dialogue-header">
+        <span style="font-size: 20px;">📌</span>
+        <div style="flex: 1;">
+          <div style="font-weight: 700; font-size: 13px; color: var(--accent);" id="noteModalTitle">Projekt-Notiz</div>
+          <div id="noteModalSubtitle" style="font-size: 11px; color: var(--text-muted);">Notizen & To-Dos bearbeiten</div>
+        </div>
+        <button class="icon-btn" onclick="closeNoteModal()" style="font-size: 14px; cursor: pointer;">✕</button>
+      </div>
+      <div style="margin-top: 6px;">
+        <textarea class="notes-textarea" id="noteModalTextarea" rows="6" placeholder="Trage hier Notizen, To-Dos oder Fehler ein (z. B. 'ist in arbeit, button noch verbuggt')..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px;">
+        <button class="btn" onclick="closeNoteModal()">Schließen</button>
+        <button class="btn btn-primary" onclick="saveNoteFromModal()" style="padding: 5px 14px; font-weight: 600;">💾 Speichern</button>
+      </div>
+    </div>
+  </div>
+
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
 
@@ -1690,20 +1711,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 </div>
               </div>
 
-              <!-- Status-Hinweis Zeile -->
+              <!-- Status-Hinweis & Notiz Zeile -->
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; padding: 4px 6px; background: rgba(128,128,128,0.06); border-radius: 4px;">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                  <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Hinweis / Status:</span>
-                  \${activeProject.statusHint ? \`
-                    <span class="status-hint-pill \${getStatusHintClass(activeProject.statusHint)}" onclick="showDinoDialogueById('\${escapeHtml(activeProject.id)}')" title="Klicken für Dino-Wächter Bericht">
-                      \${escapeHtml(activeProject.statusHint)}
-                    </span>
-                  \` : \`
-                    <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Kein Hinweis gesetzt</span>
-                  \`}
+                  <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Status:</span>
+                  <button class="status-hint-pill \${getStatusHintClass(activeProject.statusHint || '⚡ In Arbeit')}" onclick="toggleStatusPicker('\${escapeHtml(activeProject.id)}')" title="Status ändern (Klicken für Auswahl)">
+                    \${escapeHtml(activeProject.statusHint || '⚡ In Arbeit')} ▾
+                  </button>
                 </div>
-                <button class="btn" style="padding: 2px 7px; font-size: 10px;" onclick="toggleStatusPicker('\${escapeHtml(activeProject.id)}')" title="Hinweis wählen (In Arbeit, Abgeschlossen...)">
-                  ℹ️ \${activeProject.statusHint ? 'Ändern' : 'Wählen'}
+                <button class="btn" style="padding: 2px 7px; font-size: 10px;" onclick="openNoteModal('\${escapeHtml(activeProject.id)}')" title="Notiz im Fenster anzeigen / bearbeiten">
+                  ℹ️ Notiz
                 </button>
               </div>
 
@@ -1920,19 +1937,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                           \${proj.isFavorite ? '<span class="mini-pill fav-pill">⭐</span>' : ''}
                           \${proj.isActiveWorkspace ? '<span class="mini-pill active-pill">🟢 Aktiv</span>' : ''}
 
-                          <!-- Status-Hinweis (durch i-Button gesetzt) -->
-                          \${proj.statusHint ? \`
-                            <span class="status-hint-pill \${getStatusHintClass(proj.statusHint)}" onclick="event.stopPropagation(); showDinoDialogueById('\${escapeHtml(proj.id)}')" title="Dino-Wächter Status: \${escapeHtml(proj.statusHint)} (Klicken für Bericht)">
-                              \${escapeHtml(proj.statusHint)}
-                            </span>
-                          \` : ''}
-
-                          <!-- Direkt sichtbare Projekt-Notiz in der Zeile -->
-                          \${proj.customNotes ? \`
-                            <span class="note-pill" title="Notiz: „\${escapeHtml(proj.customNotes)}“ (Klicken zum Ausklappen/Bearbeiten)" onclick="event.stopPropagation(); toggleRowDetails('\${escapeHtml(proj.id)}')">
-                              📌 \${escapeHtml(proj.customNotes.length > 25 ? proj.customNotes.substring(0, 25) + '…' : proj.customNotes)}
-                            </span>
-                          \` : ''}
+                          <!-- Status-Button: Wird automatisch angezeigt, Klick darauf ändert den Status! -->
+                          <button class="status-hint-pill \${getStatusHintClass(proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit' : '🟢 Bereit'))}" onclick="event.stopPropagation(); toggleStatusPicker('\${escapeHtml(proj.id)}')" title="Status ändern (Klicken für Auswahl: In Arbeit, Abgeschlossen...)">
+                            \${escapeHtml(proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit' : '🟢 Bereit'))} ▾
+                          </button>
                         </div>
 
                         <div class="cell-sub-line" title="\${escapeHtml(proj.folderPath)}">
@@ -1968,7 +1976,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                           🚀 Öffnen
                         </button>
                       \`}
-                      <button class="tbl-btn" onclick="event.stopPropagation(); toggleStatusPicker('\${escapeHtml(proj.id)}')" title="Hinweis / Status wählen (In Arbeit, Abgeschlossen...)">
+                      <button class="tbl-btn" onclick="event.stopPropagation(); openNoteModal('\${escapeHtml(proj.id)}')" title="Projekt-Notiz im Fenster anzeigen & bearbeiten">
                         ℹ️
                       </button>
                       <button class="tbl-btn tbl-btn-delete" onclick="removeProject('\${escapeHtml(proj.folderUri)}', '\${escapeHtml(proj.name)}')" title="Projekt aus dem Dino Dashboard entfernen">
@@ -2108,13 +2116,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                       🟢 Aktiv
                     </span>
                   \` : ''}
-                  \${proj.statusHint ? \`
-                    <span class="status-hint-pill \${getStatusHintClass(proj.statusHint)}" onclick="showDinoDialogueById('\${escapeHtml(proj.id)}')" title="Dino-Wächter Status: \${escapeHtml(proj.statusHint)} (Klicken für Bericht)">
-                      \${escapeHtml(proj.statusHint)}
-                    </span>
-                  \` : ''}
-                  <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="toggleStatusPicker('\${escapeHtml(proj.id)}')" title="Hinweis / Status wählen (In Arbeit, Abgeschlossen...)">
-                    ℹ️ Status
+                  <button class="status-hint-pill \${getStatusHintClass(proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit' : '🟢 Bereit'))}" onclick="toggleStatusPicker('\${escapeHtml(proj.id)}')" title="Status ändern (Klicken für Auswahl: In Arbeit, Abgeschlossen...)">
+                    \${escapeHtml(proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit' : '🟢 Bereit'))} ▾
+                  </button>
+                  <button class="btn" style="padding: 2px 7px; font-size: 10px;" onclick="openNoteModal('\${escapeHtml(proj.id)}')" title="Notiz im Fenster anzeigen / bearbeiten">
+                    ℹ️ Notiz
                   </button>
                   <span class="health-pill \${healthClass}" title="\${escapeHtml(proj.health.message)}">
                     \${escapeHtml(proj.health.badge)}
@@ -2541,7 +2547,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     function showDinoDialogue(proj) {
       if (!proj) {
-        proj = state.projects.find(p => p.isActiveWorkspace) || state.projects[0];
+        proj = state.projects.find(p => p.isActiveWorkspace);
       }
 
       const backdrop = document.getElementById('dinoDialogueBackdrop');
@@ -2553,8 +2559,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         nameEl.innerText = '🦖 Statusbericht: ' + proj.name;
         const statusText = proj.statusHint || (proj.isActiveWorkspace ? '⚡ In Arbeit (Aktiv)' : '🟢 Bereit');
         const notesText = proj.customNotes
-          ? \`<div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--card-border);"><b>📝 Ausführliche Notiz:</b><br><div style="white-space: pre-wrap; margin-top: 4px; color: var(--vscode-foreground);">\${escapeHtml(proj.customNotes)}</div></div>\`
-          : \`<div style="margin-top: 8px; font-size: 11px; color: var(--text-muted); font-style: italic;">Noch keine ausführliche Notiz hinterlegt. Du kannst jederzeit über „+ Notiz“ Notizen eintragen!</div>\`;
+          ? \`<div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--card-border);"><b>📝 Notiz:</b><br><div style="white-space: pre-wrap; margin-top: 4px; color: var(--vscode-foreground);">\${escapeHtml(proj.customNotes)}</div></div>\`
+          : \`<div style="margin-top: 8px; font-size: 11px; color: var(--text-muted); font-style: italic;">Noch keine Notiz hinterlegt. Klicke auf „ℹ️“, um eine Notiz einzutragen!</div>\`;
 
         speechEl.innerHTML = \`
           <div style="font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 4px;">
@@ -2566,13 +2572,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           \${notesText}
         \`;
       } else {
-        nameEl.innerText = '🦖 Wachdienst aktiv';
+        nameEl.innerText = '🦖 Dino-Wächter sagt Hallo!';
         speechEl.innerHTML = \`
-          <div style="font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 4px;">
-            🦖 „Rawr! Aktuell ist kein Projekt geöffnet!“
+          <div style="font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 6px;">
+            🦖 „Hallo! Schön, dass du da bist!“
           </div>
-          <div style="font-size: 11.5px; color: var(--vscode-foreground);">
-            Öffne ein Projekt aus deiner Liste, und ich behalte deinen Status und deine Notizen jederzeit im Blick!
+          <div style="font-size: 12px; line-height: 1.5; color: var(--vscode-foreground);">
+            Ich passe gut auf alle deine Projekte auf und wünsche dir einen wunderschönen, produktiven Tag!<br><br>
+            Wähle einfach ein Projekt aus deiner Liste aus oder erstelle mit <b>„✨ Neues Projekt“</b> ein neues – ich bin jederzeit für dich da!
           </div>
         \`;
       }
@@ -2586,6 +2593,45 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       }
       const backdrop = document.getElementById('dinoDialogueBackdrop');
       if (backdrop) backdrop.style.display = 'none';
+    }
+
+    // Notiz-Fenster (Modal bei Klick auf i-Button)
+    let currentNoteProjectId = null;
+
+    function openNoteModal(projId) {
+      currentNoteProjectId = projId;
+      const proj = state.projects.find(p => p.id === projId);
+      if (!proj) return;
+      const backdrop = document.getElementById('projectNoteBackdrop');
+      const titleEl = document.getElementById('noteModalTitle');
+      const subEl = document.getElementById('noteModalSubtitle');
+      const textarea = document.getElementById('noteModalTextarea');
+      if (titleEl) titleEl.innerText = '📌 Notiz: ' + proj.name;
+      if (subEl) subEl.innerText = proj.folderPath || '';
+      if (textarea) textarea.value = proj.customNotes || '';
+      if (backdrop) backdrop.style.display = 'flex';
+      setTimeout(() => { if (textarea) textarea.focus(); }, 50);
+    }
+
+    function closeNoteModal(event) {
+      if (event && event.target && event.target.id !== 'projectNoteBackdrop' && !event.target.classList.contains('icon-btn') && !event.target.classList.contains('btn')) {
+        return;
+      }
+      const backdrop = document.getElementById('projectNoteBackdrop');
+      if (backdrop) backdrop.style.display = 'none';
+      currentNoteProjectId = null;
+    }
+
+    function saveNoteFromModal() {
+      if (!currentNoteProjectId) return;
+      const textarea = document.getElementById('noteModalTextarea');
+      const notes = textarea ? textarea.value : '';
+      vscode.postMessage({
+        command: 'saveNotes',
+        uri: currentNoteProjectId,
+        notes: notes
+      });
+      closeNoteModal();
     }
 
     vscode.postMessage({ command: 'ready' });
